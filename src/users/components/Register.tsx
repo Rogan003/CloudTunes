@@ -1,5 +1,7 @@
 import {type ChangeEvent, type CSSProperties, type FC, type FormEvent, type ReactNode, useMemo, useState} from "react";
-import type {User} from "./models/user-models.ts";
+import type {User} from "../models/user-models.ts";
+import {register} from "../services/register-service.ts";
+import {Link} from "react-router-dom";
 
 export const Register = () => {
   const [form, setForm] = useState<User>({
@@ -11,13 +13,14 @@ export const Register = () => {
     password: "",
   });
   const [submitted, setSubmitted] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
 
   const errors = useMemo(() => {
     const e: Record<string, string> = {};
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const hasNumber = /\d/;
     const hasLowercaseLetter = /[a-z]/;
-    const hasUppercaseLetter = /[a-z]/;
+    const hasUppercaseLetter = /[A-Z]/;
 
     if (!form.firstName.trim()) e.firstName = "First name is required";
     if (!form.lastName.trim()) e.lastName = "Last name is required";
@@ -49,11 +52,16 @@ export const Register = () => {
     setForm(prev => ({ ...prev, [name]: value }));
   };
 
-  const onSubmit = (e: FormEvent) => {
+  const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setSubmitted(true);
     if (Object.keys(errors).length === 0) {
-      alert("Registration successful!");
+        try {
+            const result = await register(form);
+            console.log(result);
+        } catch (err) {
+            setMessage(`Registration error: ${err}`);
+        }
     }
   };
 
@@ -104,8 +112,13 @@ export const Register = () => {
           </div>
           <button type="submit" style={{ marginTop: 20, width: "100%", padding: "0.8rem 1rem", fontSize: "1.05rem" }}>Register</button>
         </form>
+          {message && (
+              <div style={{ marginTop: 14, padding: "0.7rem 0.9rem", borderRadius: 8, background: "#7f1d1d" }}>
+                  {message}
+              </div>
+          )}
         <p style={{ textAlign: "center", marginTop: 14 }}>
-          Already have an account? <a href="/login">Log in</a>
+          Already have an account? <Link to="/login">Log in</Link>
         </p>
       </div>
     </div>

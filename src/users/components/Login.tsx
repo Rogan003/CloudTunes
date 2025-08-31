@@ -1,10 +1,12 @@
 import {type ChangeEvent, type CSSProperties, type FormEvent, useState} from "react";
+import {login} from "../services/login-service.ts";
+import {Link} from "react-router-dom";
 
 export const Login = () => {
   const [form, setForm] = useState({ username: "", password: "" });
   const [message, setMessage] = useState<string | null>(null);
 
-  const onSubmit = (e: FormEvent) => {
+  const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
     if (!form.username || !form.password) {
@@ -17,8 +19,12 @@ export const Login = () => {
         setMessage("Wrong credentials. Please try again.");
         return;
     }
-
-    // if success keep user in browser and then redirect
+    try {
+        const tokens = await login("john@example.com", "SuperSecret123");
+        console.log(tokens);
+    } catch (err) {
+        setMessage(`Login error: ${err}`);
+    }
   };
 
   const onChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -52,7 +58,7 @@ export const Login = () => {
           </div>
         )}
         <p style={{ textAlign: "center", marginTop: 14 }}>
-          New here? <a href="/register">Create an account</a>
+          New here? <Link to="/register">Register</Link>
         </p>
       </div>
     </div>
