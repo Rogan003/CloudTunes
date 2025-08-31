@@ -16,7 +16,8 @@ export const Register = () => {
     const e: Record<string, string> = {};
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const hasNumber = /\d/;
-    const hasLetter = /[A-Za-z]/;
+    const hasLowercaseLetter = /[a-z]/;
+    const hasUppercaseLetter = /[a-z]/;
 
     if (!form.firstName.trim()) e.firstName = "First name is required";
     if (!form.lastName.trim()) e.lastName = "Last name is required";
@@ -27,7 +28,9 @@ export const Register = () => {
     else if (!emailRegex.test(form.email)) e.email = "Invalid email format";
 
     if (!form.password) e.password = "Password is required";
-    else if (form.password.length < 8 || !hasNumber.test(form.password) || !hasLetter.test(form.password)) e.password = "Password must be 8+ chars and include letters and numbers";
+    else if (form.password.length < 8 || !hasNumber.test(form.password) || !hasLowercaseLetter.test(form.password)
+        || !hasUppercaseLetter.test(form.password)) e.password =
+        "Password must be 8+ chars and include both lowercase and uppercase letters and numbers";
 
     if (!form.dateOfBirth) e.dateOfBirth = "Date of birth is required";
     else {
