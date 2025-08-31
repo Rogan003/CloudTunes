@@ -1,10 +1,13 @@
 import {type ChangeEvent, type CSSProperties, type FormEvent, useState} from "react";
 import {login} from "../services/login-service.ts";
-import {Link} from "react-router-dom";
+import {Link, useNavigate} from "react-router-dom";
+import {TokenStorage} from "../services/user-token-storage-service.ts";
 
 export const Login = () => {
   const [form, setForm] = useState({ username: "", password: "" });
   const [message, setMessage] = useState<string | null>(null);
+
+  const navigate = useNavigate()
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -14,14 +17,10 @@ export const Login = () => {
       return;
     }
 
-    // do login, and if not success
-    if (form.username === "admin" && form.password === "admin") {
-        setMessage("Wrong credentials. Please try again.");
-        return;
-    }
     try {
         const tokens = await login("john@example.com", "SuperSecret123");
-        console.log(tokens);
+        TokenStorage.saveTokens(tokens);
+        navigate("/")
     } catch (err) {
         setMessage(`Login error: ${err}`);
     }

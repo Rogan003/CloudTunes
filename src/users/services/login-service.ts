@@ -1,4 +1,8 @@
-import { CognitoIdentityProviderClient, InitiateAuthCommand } from "@aws-sdk/client-cognito-identity-provider";
+import {
+    CognitoIdentityProviderClient,
+    GlobalSignOutCommand,
+    InitiateAuthCommand
+} from "@aws-sdk/client-cognito-identity-provider";
 
 const REGION = "eu-central-1";
 const USER_POOL_CLIENT_ID = "6vmkb912jv1tcdlescg2m1o6sb";
@@ -36,4 +40,14 @@ export async function login(usernameOrEmail: string, password: string): Promise<
         refreshToken: RefreshToken!,
         expiresIn: ExpiresIn!,
     };
+}
+
+export async function globalSignOut(accessToken: string) {
+    try {
+        const command = new GlobalSignOutCommand({ AccessToken: accessToken });
+        const response = await client.send(command);
+        console.log("User logged out globally:", response);
+    } catch (err) {
+        console.error("Error signing out globally:", err);
+    }
 }

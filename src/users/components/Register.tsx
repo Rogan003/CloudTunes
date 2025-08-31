@@ -1,7 +1,7 @@
 import {type ChangeEvent, type CSSProperties, type FC, type FormEvent, type ReactNode, useMemo, useState} from "react";
 import type {User} from "../models/user-models.ts";
 import {register} from "../services/register-service.ts";
-import {Link} from "react-router-dom";
+import {Link, useNavigate} from "react-router-dom";
 
 export const Register = () => {
   const [form, setForm] = useState<User>({
@@ -14,6 +14,8 @@ export const Register = () => {
   });
   const [submitted, setSubmitted] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+
+  const navigate = useNavigate()
 
   const errors = useMemo(() => {
     const e: Record<string, string> = {};
@@ -57,8 +59,8 @@ export const Register = () => {
     setSubmitted(true);
     if (Object.keys(errors).length === 0) {
         try {
-            const result = await register(form);
-            console.log(result);
+            await register(form);
+            navigate("/login")
         } catch (err) {
             setMessage(`Registration error: ${err}`);
         }
