@@ -60,7 +60,7 @@ export const Register = () => {
     if (Object.keys(errors).length === 0) {
         try {
             await register(form);
-            navigate("/login")
+            navigate("/confirm-registration")
         } catch (err) {
             setMessage(`Registration error: ${err}`);
         }

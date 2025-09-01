@@ -18,7 +18,7 @@ export const Login = () => {
     }
 
     try {
-        const tokens = await login("john@example.com", "SuperSecret123");
+        const tokens = await login(form.username, form.password);
         TokenStorage.saveTokens(tokens);
         navigate("/")
     } catch (err) {
