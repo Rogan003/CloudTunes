@@ -3,18 +3,10 @@ import {
     GlobalSignOutCommand,
     InitiateAuthCommand
 } from "@aws-sdk/client-cognito-identity-provider";
-
-const REGION = "eu-central-1";
-const USER_POOL_CLIENT_ID = "6vmkb912jv1tcdlescg2m1o6sb";
+import {REGION, USER_POOL_CLIENT_ID} from "../../shared/aws-consts.ts";
+import type {LoginResponse} from "../models/aws-calls.ts";
 
 const client = new CognitoIdentityProviderClient({ region: REGION });
-
-interface LoginResponse {
-    idToken: string;
-    accessToken: string;
-    refreshToken: string;
-    expiresIn: number;
-}
 
 export async function login(usernameOrEmail: string, password: string): Promise<LoginResponse> {
     const command = new InitiateAuthCommand({

@@ -3,16 +3,10 @@
     SignUpCommand,
 } from "@aws-sdk/client-cognito-identity-provider";
 import type {User} from "../models/user-models.ts";
-
-const REGION = "eu-central-1";
-const USER_POOL_CLIENT_ID = "6vmkb912jv1tcdlescg2m1o6sb";
+    import type {RegisterResponse} from "../models/aws-calls.ts";
+    import {REGION, USER_POOL_CLIENT_ID} from "../../shared/aws-consts.ts";
 
 const client = new CognitoIdentityProviderClient({ region: REGION });
-
-interface RegisterResponse {
-    userConfirmed: boolean;
-    userSub: string;
-}
 
 export async function register(user: User): Promise<RegisterResponse> {
     const command = new SignUpCommand({

@@ -1,7 +1,5 @@
 import { CognitoIdentityProviderClient, ConfirmSignUpCommand } from "@aws-sdk/client-cognito-identity-provider";
-
-const REGION = "eu-central-1";
-const USER_POOL_CLIENT_ID = "6vmkb912jv1tcdlescg2m1o6sb";
+import {REGION, USER_POOL_CLIENT_ID} from "../../shared/aws-consts.ts";
 
 const client = new CognitoIdentityProviderClient({ region: REGION });
 

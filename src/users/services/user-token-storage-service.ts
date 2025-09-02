@@ -1,12 +1,8 @@
+import type {CognitoTokens} from "../models/aws-calls.ts";
+
 const ACCESS_TOKEN_KEY = "cognito_access_token";
 const ID_TOKEN_KEY = "cognito_id_token";
 const REFRESH_TOKEN_KEY = "cognito_refresh_token";
-
-export type CognitoTokens = {
-    accessToken: string;
-    idToken: string;
-    refreshToken: string;
-};
 
 export const TokenStorage = {
     saveTokens: (tokens: CognitoTokens) => {
