@@ -4,6 +4,11 @@ import * as cognito from 'aws-cdk-lib/aws-cognito';
 import * as lambdaNode from "aws-cdk-lib/aws-lambda-nodejs";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as iam from "aws-cdk-lib/aws-iam";
+import { AttributeType, Table } from 'aws-cdk-lib/aws-dynamodb';
+import { addCorsOptions, addMethodWithLambda } from './methodUtils';
+import { RestApi } from 'aws-cdk-lib/aws-apigateway';
+import { createArtistModelOptions } from "./models"
+import { requestTemplate } from './requestTemplate';
 
 export class AuthStack extends cdk.Stack {
     constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -62,5 +67,30 @@ export class AuthStack extends cdk.Stack {
         new cdk.CfnOutput(this, 'UserPoolId', { value: userPool.userPoolId });
         new cdk.CfnOutput(this, 'UserPoolClientId', { value: userPoolClient.userPoolClientId });
         new cdk.CfnOutput(this, 'Region', { value: this.region });
+
+        
+        const artistTable = new Table(this, "artists", {
+            partitionKey: { name: "ArtistId", type: AttributeType.STRING },
+            tableName: "artists",
+            removalPolicy: cdk.RemovalPolicy.DESTROY,
+        });
+
+        const createArtistLambda = new lambdaNode.NodejsFunction(this, "createArtist", {
+            entry: "lib/lambdas/create-artist.ts",
+            runtime: lambda.Runtime.NODEJS_20_X,
+            architecture: lambda.Architecture.ARM_64,
+            memorySize: 128,
+            timeout: cdk.Duration.seconds(5)
+        })
+        
+        artistTable.grantReadWriteData(createArtistLambda);
+
+        const api = new RestApi(this, "cloudtunes-api");
+
+        const createArtistModel = api.addModel("CreateArtistModel", createArtistModelOptions);
+        const artists = api.root.addResource("artists");
+        addCorsOptions(artists, ["POST"]);
+        const createArtistImpl = requestTemplate().body("name").body("bio").body("genre").build();
+        addMethodWithLambda(artists, "POST", createArtistLambda, createArtistImpl, createArtistModel);
     }
 }
