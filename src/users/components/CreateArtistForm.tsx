@@ -1,12 +1,32 @@
-import { useState, type CSSProperties, type FC, type FormEvent } from "react";
+import { useState, type CSSProperties, type FC, type FormEvent, type KeyboardEvent } from "react";
 import { createArtist } from "../services/artist-service";
 
 export const CreateArtistForm: FC = () => {
   const [name, setName] = useState("");
   const [bio, setBio] = useState("");
-  const [genres, setGenres] = useState("");
+  const [genreInput, setGenreInput] = useState("");
+  const [genres, setGenres] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+
+  const handleAddGenre = () => {
+    const newGenre = genreInput.trim();
+    if (newGenre && !genres.includes(newGenre)) {
+      setGenres([...genres, newGenre]);
+    }
+    setGenreInput("");
+  };
+
+  const handleGenreKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      handleAddGenre();
+    }
+  };
+
+  const handleRemoveGenre = (genre: string) => {
+    setGenres(genres.filter((g) => g !== genre));
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -14,16 +34,13 @@ export const CreateArtistForm: FC = () => {
     setMessage("");
 
     try {
-      const newArtist = {
-        name,
-        bio,
-        genres: genres.split(",").map((g) => g.trim()).filter(Boolean),
-      };
+      const newArtist = { name, bio, genres };
       const result = await createArtist(newArtist);
       setMessage(`Artist created! ID: ${result.ArtistId}`);
       setName("");
       setBio("");
-      setGenres("");
+      setGenres([]);
+      setGenreInput("");
     } catch (err) {
       setMessage("Failed to create artist.");
     } finally {
@@ -49,16 +66,29 @@ export const CreateArtistForm: FC = () => {
               <textarea name="bio" value={bio} onChange={(e) => setBio(e.target.value)} style={inputStyle} />
             </div>
             <div>
-              <label>Genre</label>
-              <input
-                type="text"
-                value={genres}
-                onChange={(e) => setGenres(e.target.value)}
-                placeholder="e.g. Rock, Pop, Jazz"
-                required
-                style={inputStyle}
+              <label>Genres</label>
+              <div style={genreContainerStyle}>
+                {genres.map((genre) => (
+                  <span key={genre} style={genreBubbleStyle}>
+                    {genre}
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveGenre(genre)}
+                      style={removeButtonStyle}
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+                <input
+                  type="text"
+                  value={genreInput}
+                  onChange={(e) => setGenreInput(e.target.value)}
+                  onKeyDown={handleGenreKeyDown}
+                  placeholder="Type a genre and press Enter"
+                  style={{ ...inputStyle, flex: 1, border: "none", background: "transparent", minWidth: 100 }}
                 />
-                {/* Initially comma separated, will be changed for something better */}
+              </div>
             </div>
           </div>
           <button type="submit" style={{ marginTop: 20, width: "100%", padding: "0.8rem 1rem", fontSize: "1.05rem" }}>
@@ -84,4 +114,35 @@ const inputStyle: CSSProperties = {
   borderRadius: 8,
   outline: "none",
   marginTop: 4,
+};
+
+const genreContainerStyle: CSSProperties = {
+  display: "flex",
+  flexWrap: "wrap",
+  gap: 8,
+  padding: "6px 8px",
+  background: "#111827",
+  border: "1px solid #334155",
+  borderRadius: 8,
+  marginTop: 4,
+};
+
+const genreBubbleStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: 6,
+  background: "#2563eb",
+  color: "#fff",
+  padding: "4px 8px",
+  borderRadius: 16,
+  fontSize: "0.9rem",
+};
+
+const removeButtonStyle: CSSProperties = {
+  background: "transparent",
+  border: "none",
+  color: "#fff",
+  cursor: "pointer",
+  fontSize: "1rem",
+  lineHeight: 1,
 };
