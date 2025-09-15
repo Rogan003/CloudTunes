@@ -6,8 +6,11 @@ export const createArtistModelOptions: ModelOptions = {
         properties: {
             name: { type: JsonSchemaType.STRING },
             bio: { type: JsonSchemaType.STRING },
-            genre: { type: JsonSchemaType.STRING }
+            genres: { 
+                type: JsonSchemaType.ARRAY,
+                items: { type: JsonSchemaType.STRING }
+            }
         },
-        required: ["name", "bio", "genre"]
+        required: ["name", "bio", "genres"]
     }
 }

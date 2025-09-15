@@ -81,7 +81,7 @@ export class AuthStack extends cdk.Stack {
             architecture: lambda.Architecture.ARM_64,
             memorySize: 128,
             timeout: cdk.Duration.seconds(5)
-        })
+        });
         
         artistTable.grantReadWriteData(createArtistLambda);
 
@@ -90,7 +90,7 @@ export class AuthStack extends cdk.Stack {
         const createArtistModel = api.addModel("CreateArtistModel", createArtistModelOptions);
         const artists = api.root.addResource("artists");
         addCorsOptions(artists, ["POST"]);
-        const createArtistImpl = requestTemplate().body("name").body("bio").body("genre").build();
+        const createArtistImpl = requestTemplate().body("name").body("bio").body("genres").build();
         addMethodWithLambda(artists, "POST", createArtistLambda, createArtistImpl, createArtistModel);
     }
 }
