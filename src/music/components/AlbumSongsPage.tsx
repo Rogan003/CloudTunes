@@ -1,8 +1,10 @@
-import React, { CSSProperties, useMemo, useState } from "react";
+import React, {type CSSProperties, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { albums, songs } from "../data/mockData";
 import { Card } from "../../shared/components/Card";
 import { Pagination } from "../../shared/components/Pagination";
+import { BackButton } from "../../shared/components/BackButton";
+import { Grid } from "../../shared/components/Grid";
 
 export const AlbumSongsPage: React.FC = () => {
   const { albumId } = useParams();
@@ -21,14 +23,16 @@ export const AlbumSongsPage: React.FC = () => {
   return (
     <div style={wrap}>
       <div style={headerRow}>
-        <h2 style={{ margin: 0 }}>Songs from {album.name}</h2>
-        <button onClick={() => navigate(-1)}>Back</button>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <BackButton />
+          <h2 style={{ margin: 0 }}>Songs from {album.name}</h2>
+        </div>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 12 }}>
+      <Grid>
         {pageItems.map(s => (
           <Card key={s.id} title={s.name} imageUrl={s.imageUrl} onClick={() => {}} />
         ))}
-      </div>
+      </Grid>
       <Pagination total={albumSongs.length} pageSize={pageSize} page={page} onChange={setPage} />
     </div>
   );

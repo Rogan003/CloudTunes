@@ -3,7 +3,6 @@ export type Artist = { id: string; name: string; imageUrl: string; genreIds: str
 export type Album = { id: string; name: string; imageUrl: string; genreId: string; artistId: string };
 export type Song = { id: string; name: string; imageUrl: string; artistId: string; albumId: string };
 
-// Prefilled demo data
 export const genres: Genre[] = [
   { id: "g1", name: "Pop", imageUrl: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?q=80&w=800&auto=format&fit=crop" },
   { id: "g2", name: "Rock", imageUrl: "https://images.unsplash.com/photo-1513829596324-4bb2800c5efb?q=80&w=800&auto=format&fit=crop" },

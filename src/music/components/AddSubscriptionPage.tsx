@@ -1,12 +1,13 @@
-import React, { CSSProperties, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, {type CSSProperties, useMemo, useState } from "react";
 import { albums, artists, genres } from "../data/mockData";
 import { Card } from "../../shared/components/Card";
-import { SubscriptionStorage, type SubscriptionData } from "../../shared/services/subscription-storage";
+import { SubscriptionStorage, type SubscriptionData } from "../services/subscription-storage.ts";
 import { Pagination } from "../../shared/components/Pagination";
+import { BackButton } from "../../shared/components/BackButton";
+import { Grid } from "../../shared/components/Grid";
+import { Section } from "../../shared/components/Section";
 
 export const AddSubscriptionPage: React.FC = () => {
-  const navigate = useNavigate();
   const [subs, setSubs] = useState<SubscriptionData>(SubscriptionStorage.load());
   const [artistPage, setArtistPage] = useState(1);
   const [albumPage, setAlbumPage] = useState(1);
@@ -27,8 +28,10 @@ export const AddSubscriptionPage: React.FC = () => {
   return (
     <div style={wrap}>
       <div style={headerRow}>
-        <h2 style={{ margin: 0 }}>Add Subscription</h2>
-        <button onClick={() => navigate(-1)}>Back</button>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <BackButton />
+          <h2 style={{ margin: 0 }}>Add Subscription</h2>
+        </div>
       </div>
 
       <Section title="Artists">
@@ -69,15 +72,4 @@ const paginate = <T,>(arr: T[], page: number, size: number): T[] => {
 const wrap: CSSProperties = { padding: 24, color: "#e5e7eb" };
 const headerRow: CSSProperties = { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 };
 
-const Grid: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 12 }}>
-    {children}
-  </div>
-);
 
-const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
-  <div style={{ marginTop: 24 }}>
-    <h3 style={{ margin: "0 0 12px 0" }}>{title}</h3>
-    {children}
-  </div>
-);

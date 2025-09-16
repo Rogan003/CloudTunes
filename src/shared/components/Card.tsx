@@ -1,4 +1,4 @@
-import React, { CSSProperties, MouseEvent, ReactNode } from "react";
+import React, {type CSSProperties, type MouseEvent, type ReactNode } from "react";
 
 export type CardProps = {
   title: string;

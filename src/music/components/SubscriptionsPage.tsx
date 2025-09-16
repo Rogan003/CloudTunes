@@ -1,9 +1,13 @@
-import React, { CSSProperties, useEffect, useMemo, useState } from "react";
+import React, {type CSSProperties, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { albums, artists, genres } from "../data/mockData";
 import { Card } from "../../shared/components/Card";
-import { SubscriptionStorage, type SubscriptionData } from "../../shared/services/subscription-storage";
+import { SubscriptionStorage, type SubscriptionData } from "../services/subscription-storage.ts";
 import { Pagination } from "../../shared/components/Pagination";
+import { BackButton } from "../../shared/components/BackButton";
+import { Grid } from "../../shared/components/Grid";
+import { Section } from "../../shared/components/Section";
+import {Empty} from "../../shared/components/Empty.tsx";
 
 export const SubscriptionsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -29,7 +33,10 @@ export const SubscriptionsPage: React.FC = () => {
   return (
     <div style={wrap}>
       <div style={headerRow}>
-        <h2 style={{ margin: 0 }}>My Subscriptions</h2>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <BackButton />
+          <h2 style={{ margin: 0 }}>My Subscriptions</h2>
+        </div>
         <button onClick={() => navigate("/subscriptions/add")}>Add subscription</button>
       </div>
 
@@ -75,10 +82,6 @@ export const SubscriptionsPage: React.FC = () => {
   );
 };
 
-const Empty: React.FC<{ text: string }> = ({ text }) => (
-  <div style={{ color: "#94a3b8" }}>{text}</div>
-);
-
 const paginate = <T,>(arr: T[], page: number, size: number): T[] => {
   const start = (page - 1) * size;
   return arr.slice(start, start + size);
@@ -87,15 +90,4 @@ const paginate = <T,>(arr: T[], page: number, size: number): T[] => {
 const wrap: CSSProperties = { padding: 24, color: "#e5e7eb" };
 const headerRow: CSSProperties = { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 };
 
-const Grid: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 12 }}>
-    {children}
-  </div>
-);
 
-const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
-  <div style={{ marginTop: 24 }}>
-    <h3 style={{ margin: "0 0 12px 0" }}>{title}</h3>
-    {children}
-  </div>
-);

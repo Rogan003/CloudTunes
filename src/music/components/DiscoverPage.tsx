@@ -1,8 +1,11 @@
-import React, { CSSProperties, useMemo, useState } from "react";
+import React, {type CSSProperties, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { albums, artists, genres } from "../data/mockData";
 import { Card } from "../../shared/components/Card";
 import { Pagination } from "../../shared/components/Pagination";
+import { BackButton } from "../../shared/components/BackButton";
+import { Grid } from "../../shared/components/Grid";
+import { Section } from "../../shared/components/Section";
 
 export const DiscoverPage: React.FC = () => {
   const navigate = useNavigate();
@@ -22,7 +25,10 @@ export const DiscoverPage: React.FC = () => {
   return (
     <div style={pageWrap}>
       <div style={headerRow}>
-        <h2 style={{ margin: 0 }}>Discover Music</h2>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <BackButton />
+          <h2 style={{ margin: 0 }}>Discover Music</h2>
+        </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <label htmlFor="genre">Genre:</label>
           <select
@@ -74,15 +80,4 @@ const pageWrap: CSSProperties = { padding: "24px", color: "#e5e7eb" };
 const headerRow: CSSProperties = { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 };
 const selectStyle: CSSProperties = { background: "#111827", color: "#fff", border: "1px solid #334155", borderRadius: 8, padding: "0.4rem 0.6rem" };
 
-const Grid: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 12 }}>
-    {children}
-  </div>
-);
 
-const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
-  <div style={{ marginTop: 24 }}>
-    <h3 style={{ margin: "0 0 12px 0" }}>{title}</h3>
-    {children}
-  </div>
-);
