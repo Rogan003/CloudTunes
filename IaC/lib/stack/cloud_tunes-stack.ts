@@ -6,9 +6,9 @@ import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as iam from "aws-cdk-lib/aws-iam";
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import { RestApi } from 'aws-cdk-lib/aws-apigateway';
-import { addCorsOptions, addMethodWithLambda } from './methodUtils';
-import { createArtistModelOptions, uploadContentModelOptions, ratingModelOptions, subscriptionModelOptions} from "./models";
-import { requestTemplate } from './requestTemplate';
+import { addCorsOptions, addMethodWithLambda } from '../utils/methodUtils';
+import { createArtistModelOptions, uploadContentModelOptions, ratingModelOptions, subscriptionModelOptions} from "../models/model-options";
+import { requestTemplate } from '../utils/requestTemplate';
 
 export class AuthStack extends cdk.Stack {
     constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -177,22 +177,22 @@ export class AuthStack extends cdk.Stack {
         const uploadContentLambda = new lambdaNode.NodejsFunction(
             this,
             "uploadContent",
-            commonLambdaProps("lib/lambdas/upload-content.ts", 10)
+            commonLambdaProps("lib/lambdas/upload-contents.ts", 10)
         );
         const getContentByArtistLambda = new lambdaNode.NodejsFunction(
             this,
             "getContentByArtist",
-            commonLambdaProps("lib/lambdas/get-content-by-artist.ts")
+            commonLambdaProps("lib/lambdas/get-contents-by-artist.ts")
         );
         const getContentByAlbumLambda = new lambdaNode.NodejsFunction(
             this,
             "getContentByAlbum",
-            commonLambdaProps("lib/lambdas/get-content-by-album.ts")
+            commonLambdaProps("lib/lambdas/get-contents-by-album.ts")
         );
         const getContentByGenreLambda = new lambdaNode.NodejsFunction(
             this,
             "getContentByGenre",
-            commonLambdaProps("lib/lambdas/get-content-by-genre.ts")
+            commonLambdaProps("lib/lambdas/get-contents-by-genre.ts")
         );
         contentTable.grantReadWriteData(uploadContentLambda);
         genresTable.grantReadWriteData(uploadContentLambda);
@@ -207,10 +207,10 @@ export class AuthStack extends cdk.Stack {
         const rateContentLambda = new lambdaNode.NodejsFunction(
             this,
             "rateContent",
-            commonLambdaProps("lib/lambdas/rate-content.ts")
+            commonLambdaProps("lib/lambdas/rate-contents.ts")
         );
         const getRatingsByContentLambda = new lambdaNode.NodejsFunction(this, "getRatingsByContentFn",
-            commonLambdaProps("lib/lambdas/get-ratings-by-content.ts")
+            commonLambdaProps("lib/lambdas/get-ratings-by-contents.ts")
         );
         ratingTable.grantReadWriteData(rateContentLambda);
         ratingTable.grantReadData(getRatingsByContentLambda);
@@ -324,7 +324,7 @@ export class AuthStack extends cdk.Stack {
             api.addModel("RatingModel", ratingModelOptions)
         );
 
-        // GET /ratings/content/{contentId}
+        // GET /ratings/contents/{contentId}
         const ratingsByContent = ratings.addResource("content").addResource("{contentId}");
         addCorsOptions(ratingsByContent, ["GET"]);
         addMethodWithLambda(

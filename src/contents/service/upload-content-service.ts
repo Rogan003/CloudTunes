@@ -1,4 +1,4 @@
-import type { UploadContentRequest, UploadContentResponse } from "../models/aws-calls.ts"
+import type { UploadContentRequest, UploadContentResponse } from "../models/aws-calls.ts";
 
 // API Gateway URL (or from .env)
 export const API_BASE_URL = "https://<your-api-id>.execute-api.eu-central-1.amazonaws.com/prod";

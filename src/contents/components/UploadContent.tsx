@@ -1,5 +1,5 @@
 import { useState, type ChangeEvent, type FormEvent } from "react";
-import { uploadContent } from "../../users/services/upload-content-service.ts";
+import { uploadContent } from "../service/upload-content-service.ts";
 
 export const UploadContent = () => {
     const [form, setForm] = useState({
