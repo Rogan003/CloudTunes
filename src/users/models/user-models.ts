@@ -6,3 +6,10 @@ export interface User {
     email: string;
     password: string;
 }
+
+export interface Subscription {
+    userId: string;
+    type: string;
+    targetId: string;
+    timestamp: string;
+}
