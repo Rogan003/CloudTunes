@@ -1,6 +1,6 @@
 import { DynamoDBClient, QueryCommand, GetItemCommand } from "@aws-sdk/client-dynamodb";
 import { Handler } from "aws-lambda";
-import {Content} from "../../../src/users/models/content-models";
+import {Content} from "../models/content-models";
 
 const client = new DynamoDBClient({});
 const genresTable = process.env.GENRES_TABLE!;

@@ -1,6 +1,6 @@
 import { DynamoDBClient, PutItemCommand } from "@aws-sdk/client-dynamodb";
 import { Handler } from "aws-lambda";
-import {Subscription} from "../../../src/users/models/user-models";
+import {Subscription} from "aws-cdk-lib/aws-sns";
 
 const client = new DynamoDBClient({});
 const subscriptionTable = process.env.SUBSCRIPTION_TABLE!;

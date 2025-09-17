@@ -1,6 +1,6 @@
 import { DynamoDBClient, PutItemCommand } from "@aws-sdk/client-dynamodb";
 import { Handler } from "aws-lambda";
-import {Rating} from "../../../src/users/models/content-models";
+import {Rating} from "../models/content-models";
 
 const client = new DynamoDBClient({});
 const ratingTable = process.env.RATING_TABLE!;

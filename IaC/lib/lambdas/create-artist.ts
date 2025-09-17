@@ -1,7 +1,7 @@
 import { PutItemCommand, DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { Handler } from "aws-lambda";
 import { v4 as uuidv4 } from "uuid";
-import {Artist} from "../../../src/users/models/artist-model";
+import {Artist} from "../models/artist-model";
 
 const client = new DynamoDBClient();
 const tableName = process.env.ARTIST_TABLE!;

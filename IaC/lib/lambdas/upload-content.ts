@@ -1,7 +1,7 @@
 import { DynamoDBClient, PutItemCommand } from "@aws-sdk/client-dynamodb";
 import { Handler } from "aws-lambda";
 import { v4 as uuidv4 } from "uuid";
-import {Content} from "../../../src/users/models/content-models";
+import { Content } from "../models/content-models";
 
 const client = new DynamoDBClient({});
 const contentTable = process.env.CONTENT_TABLE!;
