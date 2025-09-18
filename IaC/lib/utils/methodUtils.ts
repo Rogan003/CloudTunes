@@ -25,9 +25,19 @@ export function addMethodWithLambda(
           responseParameters: { [ALLOW_ORIGIN_HEADER]: "'*'" },
         },
         {
+          statusCode: "201",
+          responseParameters: { [ALLOW_ORIGIN_HEADER]: "'*'" },
+          selectionPattern: "2\\d\\d",
+        },
+        {
           statusCode: "400",
           responseParameters: { [ALLOW_ORIGIN_HEADER]: "'*'" },
-          selectionPattern: ".+",
+          selectionPattern: "4\\d\\d",
+        },
+        {
+          statusCode: "500",
+          responseParameters: { [ALLOW_ORIGIN_HEADER]: "'*'" },
+          selectionPattern: "5\\d\\d",
         },
       ],
       timeout: Duration.seconds(3),
@@ -37,7 +47,9 @@ export function addMethodWithLambda(
       requestModels: requestModel && { [APP_JSON]: requestModel },
       methodResponses: [
         { statusCode: "200", responseParameters: { [ALLOW_ORIGIN_HEADER]: true } },
+        { statusCode: "201", responseParameters: { [ALLOW_ORIGIN_HEADER]: true } },
         { statusCode: "400", responseParameters: { [ALLOW_ORIGIN_HEADER]: true } },
+        { statusCode: "500", responseParameters: { [ALLOW_ORIGIN_HEADER]: true } },
       ],
       requestValidatorOptions: { validateRequestBody: true },
     }

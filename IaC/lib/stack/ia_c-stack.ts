@@ -5,10 +5,10 @@ import * as lambdaNode from "aws-cdk-lib/aws-lambda-nodejs";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as iam from "aws-cdk-lib/aws-iam";
 import { AttributeType, Table } from 'aws-cdk-lib/aws-dynamodb';
-import { addCorsOptions, addMethodWithLambda } from './methodUtils';
+import { addCorsOptions, addMethodWithLambda } from '../utils/methodUtils';
 import { RestApi } from 'aws-cdk-lib/aws-apigateway';
-import { createArtistModelOptions } from "./models"
-import { requestTemplate } from './requestTemplate';
+import { createArtistModelOptions } from "../models/model-options"
+import { requestTemplate } from '../utils/requestTemplate';
 
 export class AuthStack extends cdk.Stack {
     constructor(scope: Construct, id: string, props?: cdk.StackProps) {
