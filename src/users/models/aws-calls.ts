@@ -15,3 +15,8 @@ export interface CognitoTokens {
     idToken: string;
     refreshToken: string;
 }
+
+export interface DecodedIdToken {
+  "cognito:groups"?: string[];
+  [key: string]: any;
+}

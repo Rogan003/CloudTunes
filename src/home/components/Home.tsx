@@ -18,9 +18,14 @@ export const Home = () => {
         navigate("/login")
     }
 
+    const createArtist = () => {
+        navigate("/create-artist")
+    }
+
     return (
         <div>
             <button onClick={() => logout()}>Logout</button>
+            <button onClick={() => createArtist()}>Create Artist</button>
             <UploadContent/>
         </div>
         

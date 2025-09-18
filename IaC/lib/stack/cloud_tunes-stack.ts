@@ -227,8 +227,9 @@ export class AuthStack extends cdk.Stack {
 
         // POST /artists
         const artists = api.root.addResource("artists");
-        addCorsOptions(artists, ["POST", "GET"]);
+        addCorsOptions(artists, ["POST"]);
         const createArtistImpl = requestTemplate()
+            // .header("Authorization")
             .body("name")
             .body("bio")
             .body("genres")

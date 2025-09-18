@@ -7,7 +7,10 @@ export const CreateArtistForm: FC = () => {
   const [genreInput, setGenreInput] = useState("");
   const [genres, setGenres] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState<{ text: string; type: "success" | "error" | "" }>({
+                                  text: "",
+                                  type: "",
+                                });
 
   const handleAddGenre = () => {
     const newGenre = genreInput.trim();
@@ -31,18 +34,18 @@ export const CreateArtistForm: FC = () => {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setMessage("");
+    setMessage({text: "", type: ""});
 
     try {
       const newArtist = { name, bio, genres };
       const result = await createArtist(newArtist);
-      setMessage(`Artist created! ID: ${result.artistId}`);
+      setMessage({text: `Artist created! ID: ${result.artistId}`, type: "success"});
       setName("");
       setBio("");
       setGenres([]);
       setGenreInput("");
-    } catch (err) {
-      setMessage("Failed to create artist.");
+    } catch (err: any) {
+      setMessage({text: err.message || "Failed to create artist", type: "error"});
     } finally {
       setLoading(false);
     }
@@ -95,9 +98,9 @@ export const CreateArtistForm: FC = () => {
             {loading ? "Creating..." : "Create Artist"}
           </button>
         </form>
-        {message && (
-          <div style={{ marginTop: 14, padding: "0.7rem 0.9rem", borderRadius: 8, background: "#7f1d1d" }}>
-            {message}
+        {message.text && (
+          <div style={{ marginTop: 14, padding: "0.7rem 0.9rem", borderRadius: 8, background: message.type === "success" ? "#14532d" : "#7f1d1d" }}>
+            {message.text}
           </div>
         )}
       </div>
