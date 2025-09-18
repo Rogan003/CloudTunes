@@ -228,7 +228,7 @@ export class AuthStack extends cdk.Stack {
         // POST /artists
         const artists = api.root.addResource("artists");
         addCorsOptions(artists, ["POST"]);
-        const createArtistImpl = requestTemplate()
+        const createArtistTmpl = requestTemplate()
             // .header("Authorization")
             .body("name")
             .body("bio")
@@ -238,7 +238,7 @@ export class AuthStack extends cdk.Stack {
             artists,
             "POST",
             createArtistLambda,
-            createArtistImpl,
+            createArtistTmpl,
             api.addModel("CreateArtistModel", createArtistModelOptions)
         );
 
@@ -265,7 +265,7 @@ export class AuthStack extends cdk.Stack {
         // POST /contents
         const contents = api.root.addResource("contents");
         addCorsOptions(contents, ["POST"]);
-        const uploadContentImpl = requestTemplate()
+        const uploadContentTmpl = requestTemplate()
             .body("filename")
             .body("filetype")
             .body("filesize")
@@ -280,7 +280,7 @@ export class AuthStack extends cdk.Stack {
             contents,
             "POST",
             uploadContentLambda,
-            uploadContentImpl,
+            uploadContentTmpl,
             api.addModel("UploadContentModel", uploadContentModelOptions)
         );
 
