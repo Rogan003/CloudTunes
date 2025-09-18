@@ -57,13 +57,24 @@ export const handler: Handler<Content> = async (event: any) => {
 
         return {
             statusCode: 201,
+            headers: {
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Credentials": "false",
+                "Content-Type": "application/json",
+            },
+
             body: JSON.stringify({ contentId, filename, filetype, filesize, title, imageUrl, albumId, albumName, createdAt: now, updatedAt: now, genres, artistIds }),
         };
 
     } catch (error: any) {
         return {
-            statusCode: error.name === "ConditionalCheckFailedException" ? 409 : 500,  // 409 - duplicate
-            body: JSON.stringify({ message: error.message }),
+            statusCode: error?.name === "ConditionalCheckFailedException" ? 409 : 500,  // 409 - duplicate
+            headers: {
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Credentials": "false",
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ message: error?.message ?? "Unknown error"}),
         };
     }
 };

@@ -1,7 +1,7 @@
 import type { UploadContentRequest, UploadContentResponse } from "../models/aws-calls.ts";
 
 // API Gateway URL (or from .env)
-export const API_BASE_URL = "https://<your-api-id>.execute-api.eu-central-1.amazonaws.com/prod";
+export const API_BASE_URL = "https://zoqpwwqkpd.execute-api.eu-central-1.amazonaws.com/prod";
 
 export async function uploadContent(content: UploadContentRequest): Promise<UploadContentResponse> {
     const response = await fetch(`${API_BASE_URL}/contents`, {
