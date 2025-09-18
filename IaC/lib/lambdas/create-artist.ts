@@ -3,7 +3,7 @@ import { Handler } from "aws-lambda";
 import { v4 as uuidv4 } from "uuid";
 import {Artist} from "../models/artist-model";
 
-const client = new DynamoDBClient();
+const client = new DynamoDBClient({});
 const tableName = process.env.ARTIST_TABLE!;
 
 export const handler: Handler<Artist> = async (event: any) => {

@@ -36,7 +36,7 @@ export const CreateArtistForm: FC = () => {
     try {
       const newArtist = { name, bio, genres };
       const result = await createArtist(newArtist);
-      setMessage(`Artist created! ID: ${result.ArtistId}`);
+      setMessage(`Artist created! ID: ${result.artistId}`);
       setName("");
       setBio("");
       setGenres([]);

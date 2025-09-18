@@ -4,7 +4,7 @@ import {Login} from "./users/components/Login.tsx";
 import {Register} from "./users/components/Register.tsx";
 import {Home} from "./home/components/Home.tsx";
 import {ConfirmRegistration} from "./users/components/ConfirmRegistration.tsx";
-import { CreateArtistForm } from './users/components/CreateArtistForm.tsx';
+import { CreateArtistForm } from './artists/components/CreateArtistForm.tsx';
 
 function App() {
   return (

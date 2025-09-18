@@ -4,5 +4,3 @@ export type Artist = {
     bio: string;
     genres: string[];
 }
-
-export type CreateArtistRequest = Omit<Artist, 'artistId'>
