@@ -1,6 +1,6 @@
-export interface Artist {
+export type Artist = {
     artistId: string;
     name: string;
     bio: string;
-    genre: string;
+    genres: string[];
 }

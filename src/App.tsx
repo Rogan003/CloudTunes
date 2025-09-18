@@ -4,6 +4,7 @@ import {Login} from "./users/components/Login.tsx";
 import {Register} from "./users/components/Register.tsx";
 import {Home} from "./home/components/Home.tsx";
 import {ConfirmRegistration} from "./users/components/ConfirmRegistration.tsx";
+import { CreateArtistForm } from './artists/components/CreateArtistForm.tsx';
 
 function App() {
   return (
@@ -13,6 +14,7 @@ function App() {
               <Route path="/register" element={<Register />} />
               <Route path="/login" element={<Login />} />
               <Route path="/confirm-registration" element={<ConfirmRegistration />} />
+              <Route path="/create-artist" element={<CreateArtistForm />} />
           </Routes>
       </BrowserRouter>
   )
