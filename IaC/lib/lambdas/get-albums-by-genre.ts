@@ -12,22 +12,22 @@ export const handler: Handler<Artist> = async (event: any) => {
         const { Items } = await client.send(new QueryCommand({
             TableName: genresTable,
             KeyConditionExpression: "genre = :g AND begins_with(itemKey, :prefix)",
-            ExpressionAttributeValues: { ":g": { S: genre }, ":prefix": { S: "ARTIST#" } }
+            ExpressionAttributeValues: { ":g": { S: genre }, ":prefix": { S: "ALBUM#" } }
         }));
 
-        const artists = [];
+        const albums = [];
         if (Items) {
             for (const i of Items) {
-                const artistId = i.itemKey.S!.replace("ARTIST#", "");
-                const artistName = i.name.S!;
-                artists.push({
-                    artistId,
-                    artistName,
+                const albumId = i.itemKey.S!.replace("ALBUM#", "");
+                const albumName = i.name.S!;
+                albums.push({
+                    artistId: albumId,
+                    artistName: albumName,
                 });
             }
         }
 
-        return { statusCode: 200, body: JSON.stringify(artists) };
+        return { statusCode: 200, body: JSON.stringify(albums) };
 
     } catch (error: any) {
         return { statusCode: 500, body: JSON.stringify({ message: error.message }) };

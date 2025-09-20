@@ -172,7 +172,13 @@ export class AuthStack extends cdk.Stack {
         artistTable.grantReadWriteData(createArtistLambda);
         artistTable.grantReadData(getArtistLambda);
         genresTable.grantReadData(getArtistsByGenreLambda);
-        artistTable.grantReadData(getArtistsByGenreLambda);
+
+        const getAlbumsByGenreLambda = new lambdaNode.NodejsFunction(
+            this,
+            "getAlbumsByGenre",
+            commonLambdaProps("lib/lambdas/get-albums-by-genre.ts")
+        );
+        genresTable.grantReadData(getAlbumsByGenreLambda);
 
         const uploadContentLambda = new lambdaNode.NodejsFunction(
             this,
@@ -259,6 +265,17 @@ export class AuthStack extends cdk.Stack {
             artistsByGenre,
             "GET",
             getArtistsByGenreLambda,
+            requestTemplate().path("genre").build()
+        );
+
+        // GET /albums/genre/{genre}
+        const albums = api.root.addResource("albums");
+        const albumsByGenre = albums.addResource("genre").addResource("{genre}");
+        addCorsOptions(albumsByGenre, ["GET"]);
+        addMethodWithLambda(
+            albumsByGenre,
+            "GET",
+            getAlbumsByGenreLambda,
             requestTemplate().path("genre").build()
         );
 

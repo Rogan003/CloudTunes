@@ -7,6 +7,7 @@ import { DecodedToken } from "../models/decode-token";
 
 const client = new DynamoDBClient({});
 const tableName = process.env.ARTIST_TABLE!;
+const genresTable = process.env.GENRES_TABLE!;
 
 export const handler: Handler<Artist> = async (event: any) => {
     try {
@@ -37,6 +38,18 @@ export const handler: Handler<Artist> = async (event: any) => {
             ConditionExpression: "attribute_not_exists(artistId)"
         });
         await client.send(command);
+
+        // Insert into Genres table (one item per genre)
+        for (const genre of genres) {
+            await client.send(new PutItemCommand({
+                TableName: genresTable,
+                Item: {
+                    genre: { S: genre },
+                    itemKey: { S: `ARTIST#${artistId}` },
+                    name: { S: name },
+                }
+            }));
+        }
 
         return {
             statusCode: 201,
