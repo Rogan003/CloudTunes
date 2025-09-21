@@ -55,6 +55,14 @@ export const handler: Handler<Content> = async (event: any) => {
                         name: { S: albumName },
                     }
                 }));
+
+                await client.send(new PutItemCommand({
+                    TableName: genresTable,
+                    Item: {
+                        genre: { S: "Genres" },
+                        itemKey: { S: genre },
+                    },
+                }));
             }
         }
 

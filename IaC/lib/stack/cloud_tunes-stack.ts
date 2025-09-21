@@ -91,11 +91,11 @@ export class AuthStack extends cdk.Stack {
             removalPolicy: cdk.RemovalPolicy.DESTROY,
         });
 
-        // Genres table: map genre -> albums/artists
+        // Genres table: map genre -> albums/artists || "Genres" -> genre_name
         const genresTable = new dynamodb.Table(this, "Genres", {
             tableName: "Genres",
             partitionKey: { name: "genre", type: dynamodb.AttributeType.STRING },
-            sortKey: { name: "itemKey", type: dynamodb.AttributeType.STRING }, // e.g., "ALBUM#<albumId>" or "ARTIST#<artistId>"
+            sortKey: { name: "itemKey", type: dynamodb.AttributeType.STRING }, // usually "ALBUM#<albumId>" or "ARTIST#<artistId>"
             billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
             removalPolicy: cdk.RemovalPolicy.DESTROY,
         });
@@ -172,6 +172,7 @@ export class AuthStack extends cdk.Stack {
         artistTable.grantReadWriteData(createArtistLambda);
         artistTable.grantReadData(getArtistLambda);
         genresTable.grantReadData(getArtistsByGenreLambda);
+        genresTable.grantWriteData(createArtistLambda);
 
         const getAlbumsByGenreLambda = new lambdaNode.NodejsFunction(
             this,
@@ -179,6 +180,13 @@ export class AuthStack extends cdk.Stack {
             commonLambdaProps("lib/lambdas/get-albums-by-genre.ts")
         );
         genresTable.grantReadData(getAlbumsByGenreLambda);
+
+        const getGenres = new lambdaNode.NodejsFunction(
+            this,
+            "getGenres",
+            commonLambdaProps("lib/lambdas/get-genres.ts")
+        );
+        genresTable.grantReadData(getGenres);
 
         const uploadContentLambda = new lambdaNode.NodejsFunction(
             this,
@@ -201,7 +209,7 @@ export class AuthStack extends cdk.Stack {
             commonLambdaProps("lib/lambdas/get-content-by-genre.ts")
         );
         contentTable.grantReadWriteData(uploadContentLambda);
-        genresTable.grantReadWriteData(uploadContentLambda);
+        genresTable.grantWriteData(uploadContentLambda);
         contentArtistMap.grantReadWriteData(uploadContentLambda);
 
         contentTable.grantReadData(getContentByAlbumLambda);
@@ -277,6 +285,14 @@ export class AuthStack extends cdk.Stack {
             "GET",
             getAlbumsByGenreLambda,
             requestTemplate().path("genre").build()
+        );
+
+        const genres = api.root.addResource("genres");
+        addCorsOptions(genres, ["GET"]);
+        addMethodWithLambda(
+            genres,
+            "GET",
+            getGenres,
         );
 
         // POST /contents

@@ -1,6 +1,6 @@
 import React, {type CSSProperties, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { albums, songs } from "../data/mockData";
+import { albums, songs } from "../models/music-models.ts";
 import { Card } from "../../shared/components/Card";
 import { Pagination } from "../../shared/components/Pagination";
 import { BackButton } from "../../shared/components/BackButton";

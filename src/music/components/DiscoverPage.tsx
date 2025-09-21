@@ -1,26 +1,70 @@
-import React, {type CSSProperties, useMemo, useState } from "react";
+import React, {type CSSProperties, useEffect, useMemo, useState} from "react";
 import { useNavigate } from "react-router-dom";
-import { albums, artists, genres } from "../data/mockData";
 import { Card } from "../../shared/components/Card";
 import { Pagination } from "../../shared/components/Pagination";
 import { BackButton } from "../../shared/components/BackButton";
 import { Grid } from "../../shared/components/Grid";
 import { Section } from "../../shared/components/Section";
+import type {AlbumCard, ArtistCard} from "../models/music-models.ts";
+import {getAlbumsForGenre, getArtistsForGenre, getGenres} from "../services/genres-service.ts";
 
 export const DiscoverPage: React.FC = () => {
   const navigate = useNavigate();
-  const [genreId, setGenreId] = useState(genres[0]?.id ?? "");
+  const [genres, setGenres] = useState<string[]>([]);
+  const [selectedGenre, setSelectedGenre] = useState<string | null>(null);
+  const [albums, setAlbums] = useState<AlbumCard[]>([]);
+  const [artists, setArtists] = useState<ArtistCard[]>([]);
   const [albumPage, setAlbumPage] = useState(1);
   const [artistPage, setArtistPage] = useState(1);
   const pageSize = 6;
 
-  const filteredAlbums = useMemo(() => albums.filter(a => a.genreId === genreId), [genreId]);
-  const filteredArtists = useMemo(() => artists.filter(a => a.genreIds.includes(genreId)), [genreId]);
+    useEffect(() => {
+        const fetchGenres = async () => {
+            try {
+                const genres: string[] = await getGenres();
+                setGenres(genres);
 
-  const albumPageItems = useMemo(() => paginate(filteredAlbums, albumPage, pageSize), [filteredAlbums, albumPage]);
-  const artistPageItems = useMemo(() => paginate(filteredArtists, artistPage, pageSize), [filteredArtists, artistPage]);
+                if (genres.length > 0) {
+                    setSelectedGenre(genres[0]);
+                }
+            } catch (err: any) {
+                console.log(err)
+                alert("An error occurred while fetching genres: " + err.message);
+            }
+        };
 
-  const selectedGenre = genres.find(g => g.id === genreId);
+        fetchGenres();
+    }, []);
+
+  const loadForGenre = async () => {
+      if (!selectedGenre) return;
+
+      let albums: AlbumCard[] = [];
+      let artists: ArtistCard[] = [];
+      try {
+          albums = await getAlbumsForGenre(selectedGenre);
+      } catch (err: any) {
+          alert("An error occurred while fetching albums: " + err.message);
+          return;
+      }
+
+      try {
+          artists = await getArtistsForGenre(selectedGenre);
+      } catch (err: any) {
+          alert("An error occurred while fetching artists: " + err.message);
+          return;
+      }
+
+      setAlbums(albums);
+      setArtists(artists);
+  }
+
+  useEffect(() => {
+      loadForGenre()
+  }, [selectedGenre])
+
+  const albumPageItems = useMemo(() => paginate(albums, albumPage, pageSize), [albums, albumPage]);
+  const artistPageItems = useMemo(() => paginate(artists, artistPage, pageSize), [artists, artistPage]);
 
   return (
     <div style={pageWrap}>
@@ -33,12 +77,12 @@ export const DiscoverPage: React.FC = () => {
           <label htmlFor="genre">Genre:</label>
           <select
             id="genre"
-            value={genreId}
-            onChange={(e) => { setGenreId(e.target.value); setAlbumPage(1); setArtistPage(1); }}
+            value={selectedGenre ?? ""}
+            onChange={(e) => { setSelectedGenre(e.target.value); setAlbumPage(1); setArtistPage(1); }}
             style={selectStyle}
           >
             {genres.map(g => (
-              <option key={g.id} value={g.id}>{g.name}</option>
+              <option key={g} value={g}>{g}</option>
             ))}
           </select>
         </div>
@@ -46,7 +90,7 @@ export const DiscoverPage: React.FC = () => {
 
       {selectedGenre && (
         <div style={{ marginBottom: 20, color: "#94a3b8" }}>
-          Explore albums and artists in {selectedGenre.name}
+          Explore albums and artists in {selectedGenre}
         </div>
       )}
 
@@ -56,7 +100,7 @@ export const DiscoverPage: React.FC = () => {
             <Card key={al.id} title={al.name} imageUrl={al.imageUrl} onClick={() => navigate(`/albums/${al.id}`)} />
           ))}
         </Grid>
-        <Pagination total={filteredAlbums.length} pageSize={pageSize} page={albumPage} onChange={setAlbumPage} />
+        <Pagination total={albums.length} pageSize={pageSize} page={albumPage} onChange={setAlbumPage} />
       </Section>
 
       <Section title="Artists">
@@ -65,7 +109,7 @@ export const DiscoverPage: React.FC = () => {
             <Card key={ar.id} title={ar.name} imageUrl={ar.imageUrl} onClick={() => navigate(`/artists/${ar.id}`)} />
           ))}
         </Grid>
-        <Pagination total={filteredArtists.length} pageSize={pageSize} page={artistPage} onChange={setArtistPage} />
+        <Pagination total={artists.length} pageSize={pageSize} page={artistPage} onChange={setArtistPage} />
       </Section>
     </div>
   );

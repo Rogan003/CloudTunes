@@ -1,5 +1,5 @@
 import React, {type CSSProperties, useMemo, useState } from "react";
-import { albums, artists, genres } from "../data/mockData";
+import { albums, artists, genres } from "../models/music-models.ts";
 import { Card } from "../../shared/components/Card";
 import { SubscriptionStorage, type SubscriptionData } from "../services/subscription-storage.ts";
 import { Pagination } from "../../shared/components/Pagination";

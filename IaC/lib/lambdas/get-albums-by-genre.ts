@@ -1,11 +1,11 @@
 import { DynamoDBClient, QueryCommand } from "@aws-sdk/client-dynamodb";
 import { Handler } from "aws-lambda";
-import {Artist} from "../models/artist-model";
+import {AlbumCard} from "../models/music-models";
 
 const client = new DynamoDBClient({});
 const genresTable = process.env.GENRES_TABLE!;
 
-export const handler: Handler<Artist> = async (event: any) => {
+export const handler: Handler<AlbumCard[]> = async (event: any) => {
     try {
         const genre = event.pathParameters.genre;
 
@@ -15,19 +15,27 @@ export const handler: Handler<Artist> = async (event: any) => {
             ExpressionAttributeValues: { ":g": { S: genre }, ":prefix": { S: "ALBUM#" } }
         }));
 
-        const albums = [];
+        const albums: AlbumCard[] = [];
         if (Items) {
             for (const i of Items) {
                 const albumId = i.itemKey.S!.replace("ALBUM#", "");
                 const albumName = i.name.S!;
                 albums.push({
-                    artistId: albumId,
-                    artistName: albumName,
+                    id: albumId,
+                    name: albumName,
                 });
             }
         }
 
-        return { statusCode: 200, body: JSON.stringify(albums) };
+        return {
+            statusCode: 200,
+            headers: {
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Credentials": "true",
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(albums)
+        };
 
     } catch (error: any) {
         return { statusCode: 500, body: JSON.stringify({ message: error.message }) };
