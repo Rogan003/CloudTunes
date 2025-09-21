@@ -1,21 +1,38 @@
-import React, {type CSSProperties, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import React, {type CSSProperties, useEffect, useMemo, useState} from "react";
+import {useLocation, useNavigate, useParams} from "react-router-dom";
 import { Card } from "../../shared/components/Card";
 import { Pagination } from "../../shared/components/Pagination";
 import { BackButton } from "../../shared/components/BackButton";
 import { Grid } from "../../shared/components/Grid";
+import type {ContentCard} from "../../shared/models/content-models.ts";
+import {getSongsForArtist} from "../services/content-service.ts";
 
 export const ArtistSongsPage: React.FC = () => {
   const { artistId } = useParams();
+  const { name } = useLocation().state || {};
   const navigate = useNavigate();
-  const artist = artists.find(a => a.id === artistId);
   const [page, setPage] = useState(1);
   const pageSize = 12;
+  const [artistSongs, setArtistSongs] = useState<ContentCard[]>([]);
 
-  const artistSongs = useMemo(() => songs.filter(s => s.artistId === artistId), [artistId]);
+    useEffect(() => {
+        const fetchSongsForArtist = async () => {
+            try {
+                if (!artistId) return;
+
+                const songs: ContentCard[] = await getSongsForArtist(artistId);
+                setArtistSongs(songs);
+            } catch (err: any) {
+                alert("An error occurred while fetching artist songs: " + err.message);
+            }
+        };
+
+        fetchSongsForArtist();
+    }, []);
+
   const pageItems = useMemo(() => paginate(artistSongs, page, pageSize), [artistSongs, page]);
 
-  if (!artist) {
+  if (!artistId) {
     return <div style={wrap}><p>Artist not found.</p><button onClick={() => navigate(-1)}>Back</button></div>;
   }
 
@@ -24,12 +41,14 @@ export const ArtistSongsPage: React.FC = () => {
       <div style={headerRow}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <BackButton />
-          <h2 style={{ margin: 0 }}>Songs by {artist.name}</h2>
+          <h2 style={{ margin: 0 }}>Songs by {name}</h2>
         </div>
       </div>
       <Grid>
         {pageItems.map(s => (
-          <Card key={s.id} title={s.name} imageUrl={s.imageUrl} onClick={() => {}} />
+          <Card key={s.contentId} title={s.title} imageUrl={s.imageUrl} onClick={() => {
+              navigate(`/songs/${s.contentId}`);
+          }} />
         ))}
       </Grid>
       <Pagination total={artistSongs.length} pageSize={pageSize} page={page} onChange={setPage} />

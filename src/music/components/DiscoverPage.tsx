@@ -97,7 +97,10 @@ export const DiscoverPage: React.FC = () => {
       <Section title="Albums">
         <Grid>
           {albumPageItems.map(al => (
-            <Card key={al.id} title={al.name} imageUrl={al.imageUrl} onClick={() => navigate(`/albums/${al.id}`)} />
+            <Card key={al.id} title={al.name} imageUrl={al.imageUrl}
+                  onClick={() => navigate(`/albums/${al.id}`, {
+                      state: { name: al.name }
+                  })} />
           ))}
         </Grid>
         <Pagination total={albums.length} pageSize={pageSize} page={albumPage} onChange={setAlbumPage} />
@@ -106,7 +109,10 @@ export const DiscoverPage: React.FC = () => {
       <Section title="Artists">
         <Grid>
           {artistPageItems.map(ar => (
-            <Card key={ar.id} title={ar.name} imageUrl={ar.imageUrl} onClick={() => navigate(`/artists/${ar.id}`)} />
+            <Card key={ar.id} title={ar.name} imageUrl={ar.imageUrl}
+                  onClick={() => navigate(`/artists/${ar.id}`, {
+                    state: {name: ar.name}
+                })} />
           ))}
         </Grid>
         <Pagination total={artists.length} pageSize={pageSize} page={artistPage} onChange={setArtistPage} />
