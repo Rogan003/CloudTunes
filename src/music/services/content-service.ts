@@ -11,7 +11,7 @@ export async function getSongsForArtist(artistId: string): Promise<ContentCard[]
     const body = await response.json();
 
     if (!response.ok) {
-        throw new Error(body.message || `Upload failed with status ${response.status}`);
+        throw new Error(body.message || `Fetch failed with status ${response.status}`);
     }
 
     return body as ContentCard[];
@@ -26,7 +26,7 @@ export async function getSongsForAlbum(albumId: string): Promise<ContentCard[]> 
     const body = await response.json();
 
     if (!response.ok) {
-        throw new Error(body.message || `Upload failed with status ${response.status}`);
+        throw new Error(body.message || `Fetch failed with status ${response.status}`);
     }
 
     return body as ContentCard[];

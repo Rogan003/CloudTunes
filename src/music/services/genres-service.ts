@@ -11,7 +11,7 @@ export async function getArtistsForGenre(genre: string): Promise<ArtistCard[]> {
     const body = await response.json();
 
     if (!response.ok) {
-        throw new Error(body.message || `Upload failed with status ${response.status}`);
+        throw new Error(body.message || `Fetch failed with status ${response.status}`);
     }
 
     return body as ArtistCard[];
@@ -26,7 +26,7 @@ export async function getAlbumsForGenre(genre: string): Promise<AlbumCard[]> {
     const body = await response.json();
 
     if (!response.ok) {
-        throw new Error(body.message || `Upload failed with status ${response.status}`);
+        throw new Error(body.message || `Fetch failed with status ${response.status}`);
     }
 
     return body as AlbumCard[];
@@ -41,7 +41,7 @@ export async function getGenres(): Promise<string[]> {
     const body = await response.json();
 
     if (!response.ok) {
-        throw new Error(body.message || `Upload failed with status ${response.status}`);
+        throw new Error(body.message || `Fetch failed with status ${response.status}`);
     }
 
     return body as string[];

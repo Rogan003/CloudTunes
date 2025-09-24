@@ -23,7 +23,7 @@ export const AlbumSongsPage: React.FC = () => {
               const songs: ContentCard[] = await getSongsForAlbum(albumId);
               setAlbumSongs(songs);
           } catch (err: any) {
-              alert("An error occurred while album songs: " + err.message);
+              alert("An error occurred while fetching album songs: " + err.message);
           }
       };
 
