@@ -1,22 +1,38 @@
-import React, {type CSSProperties, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { albums, songs } from "../data/mockData";
+import React, {type CSSProperties, useEffect, useMemo, useState} from "react";
+import {useLocation, useNavigate, useParams} from "react-router-dom";
 import { Card } from "../../shared/components/Card";
 import { Pagination } from "../../shared/components/Pagination";
 import { BackButton } from "../../shared/components/BackButton";
 import { Grid } from "../../shared/components/Grid";
+import {getSongsForAlbum} from "../services/content-service.ts";
+import type {ContentCard} from "../../shared/models/content-models.ts";
 
 export const AlbumSongsPage: React.FC = () => {
   const { albumId } = useParams();
+  const { name } = useLocation().state || {};
   const navigate = useNavigate();
-  const album = albums.find(a => a.id === albumId);
   const [page, setPage] = useState(1);
   const pageSize = 12;
+  const [albumSongs, setAlbumSongs] = useState<ContentCard[]>([]);
 
-  const albumSongs = useMemo(() => songs.filter(s => s.albumId === albumId), [albumId]);
+  useEffect(() => {
+      const fetchSongsForAlbum = async () => {
+          try {
+              if (!albumId) return;
+
+              const songs: ContentCard[] = await getSongsForAlbum(albumId);
+              setAlbumSongs(songs);
+          } catch (err: any) {
+              alert("An error occurred while album songs: " + err.message);
+          }
+      };
+
+      fetchSongsForAlbum();
+      }, []);
+
   const pageItems = useMemo(() => paginate(albumSongs, page, pageSize), [albumSongs, page]);
 
-  if (!album) {
+  if (!albumId) {
     return <div style={wrap}><p>Album not found.</p><button onClick={() => navigate(-1)}>Back</button></div>;
   }
 
@@ -25,12 +41,14 @@ export const AlbumSongsPage: React.FC = () => {
       <div style={headerRow}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <BackButton />
-          <h2 style={{ margin: 0 }}>Songs from {album.name}</h2>
+          <h2 style={{ margin: 0 }}>Songs from {name}</h2>
         </div>
       </div>
       <Grid>
         {pageItems.map(s => (
-          <Card key={s.id} title={s.name} imageUrl={s.imageUrl} onClick={() => {}} />
+          <Card key={s.contentId} title={s.title} imageUrl={s.imageUrl} onClick={() => {
+              navigate(`/songs/${s.contentId}`);
+          }} />
         ))}
       </Grid>
       <Pagination total={albumSongs.length} pageSize={pageSize} page={page} onChange={setPage} />

@@ -8,8 +8,8 @@ import { CreateArtistForm } from './artists/components/CreateArtistForm.tsx';
 import { DiscoverPage } from "./music/components/DiscoverPage";
 import { ArtistSongsPage } from "./music/components/ArtistSongsPage";
 import { AlbumSongsPage } from "./music/components/AlbumSongsPage";
-import { SubscriptionsPage } from "./music/components/SubscriptionsPage";
-import { AddSubscriptionPage } from "./music/components/AddSubscriptionPage";
+// import { SubscriptionsPage } from "./music/components/SubscriptionsPage";
+// import { AddSubscriptionPage } from "./music/components/AddSubscriptionPage";
 import {UploadContent} from "./contents/components/UploadContent.tsx";
 
 function App() {
@@ -24,8 +24,8 @@ function App() {
                 <Route path="/discover" element={<DiscoverPage />} />
                 <Route path="/artists/:artistId" element={<ArtistSongsPage />} />
                 <Route path="/albums/:albumId" element={<AlbumSongsPage />} />
-                <Route path="/subscriptions" element={<SubscriptionsPage />} />
-                <Route path="/subscriptions/add" element={<AddSubscriptionPage />} />
+                {/*<Route path="/subscriptions" element={<SubscriptionsPage />} />*/}
+                {/*<Route path="/subscriptions/add" element={<AddSubscriptionPage />} />*/}
                 <Route path="/upload-content" element={<UploadContent/>} />
             </Routes>
         </BrowserRouter>

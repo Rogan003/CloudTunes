@@ -19,3 +19,9 @@ export interface Rating {
     rating: number; // 1-5 stars
     timestamp: string;
 }
+
+export interface ContentCard {
+    contentId: string;
+    title: string;
+    imageUrl?: string;
+}
