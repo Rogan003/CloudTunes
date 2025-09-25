@@ -54,6 +54,17 @@ export const handler: APIGatewayProxyHandlerV2 = async (event: any) => {
             { expiresIn: 3600 } // 1 hour validity
         );
 
+        let albumName: string | undefined;
+        if (item.albumId?.S) {
+            const albumResult = await client.send(
+                new GetItemCommand({
+                    TableName: contentTable,
+                    Key: { contentId: { S: "Albums" }, sortKey: { S: item.albumId.S } },
+                })
+            );
+            albumName = albumResult.Item?.albumName?.S;
+        }
+
         const response = {
             contentId: item.contentId.S,
             filename: item.filename.S,
@@ -62,7 +73,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event: any) => {
             title: item.title.S,
             imageUrl: item.imageUrl?.S,
             albumId: item.albumId?.S,
-            albumName: item.albumName?.S,
+            albumName: albumName,
             createdAt: item.createdAt.S,
             updatedAt: item.updatedAt.S,
             genres: item.genres?.SS ?? [],
