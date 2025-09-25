@@ -2,7 +2,7 @@ import React, {type CSSProperties, useEffect, useMemo, useState} from "react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "../../shared/components/Card";
 import { Pagination } from "../../shared/components/Pagination";
-import { BackButton } from "../../shared/components/BackButton";
+import { BackButton } from "../../shared/components/buttons.tsx";
 import { Grid } from "../../shared/components/Grid";
 import { Section } from "../../shared/components/Section";
 import type {AlbumCard, ArtistCard} from "../models/music-models.ts";

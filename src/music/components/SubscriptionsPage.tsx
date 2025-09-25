@@ -1,33 +1,35 @@
 import React, {type CSSProperties, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { albums, artists, genres } from "../models/music-models.ts";
 import { Card } from "../../shared/components/Card";
-import { SubscriptionStorage, type SubscriptionData } from "../services/subscription-storage.ts";
 import { Pagination } from "../../shared/components/Pagination";
-import { BackButton } from "../../shared/components/BackButton";
+import { BackButton } from "../../shared/components/buttons.tsx";
 import { Grid } from "../../shared/components/Grid";
 import { Section } from "../../shared/components/Section";
 import {Empty} from "../../shared/components/Empty.tsx";
+import type {AlbumCard, ArtistCard, Song} from "../models/music-models.ts";
 
 export const SubscriptionsPage: React.FC = () => {
+    // next step: add backend calls for this component, then jump to the subscribe button and related stuff
   const navigate = useNavigate();
-  const [subs, setSubs] = useState<SubscriptionData>({ artists: [], albums: [], genres: [] });
+  const [artists, setArtists] = useState<ArtistCard[]>([]);
+  const [albums, setAlbums] = useState<AlbumCard[]>([]);
+  const [genres, setGenres] = useState<Song[]>([]);
   const [artistPage, setArtistPage] = useState(1);
   const [albumPage, setAlbumPage] = useState(1);
   const [genrePage, setGenrePage] = useState(1);
   const pageSize = 6;
 
   useEffect(() => {
-    setSubs(SubscriptionStorage.load());
+    // loading call to backend
   }, []);
 
-  const artistItems = useMemo(() => paginate(artists.filter(a => subs.artists.includes(a.id)), artistPage, pageSize), [subs, artistPage]);
-  const albumItems = useMemo(() => paginate(albums.filter(a => subs.albums.includes(a.id)), albumPage, pageSize), [subs, albumPage]);
-  const genreItems = useMemo(() => paginate(genres.filter(g => subs.genres.includes(g.id)), genrePage, pageSize), [subs, genrePage]);
+  const artistItems = useMemo(() => paginate(artists, artistPage, pageSize), [artists, artistPage]);
+  const albumItems = useMemo(() => paginate(albums, albumPage, pageSize), [albums, albumPage]);
+  const genreItems = useMemo(() => paginate(genres, genrePage, pageSize), [genres, genrePage]);
 
-  const onUnsub = (type: keyof SubscriptionData, id: string) => {
-    const updated = SubscriptionStorage.unsubscribe(type, id);
-    setSubs(updated);
+  const onUnsub = (type: string, id: string) => {
+    // unsubscribe call to backend
+      // remove card from the methods? no need for another get call to backend?
   };
 
   return (
@@ -41,40 +43,40 @@ export const SubscriptionsPage: React.FC = () => {
       </div>
 
       <Section title="Artists">
-        {subs.artists.length === 0 ? <Empty text="No artist subscriptions" /> : (
+        {artists.length === 0 ? <Empty text="No artist subscriptions" /> : (
           <>
             <Grid>
               {artistItems.map(a => (
                 <Card key={a.id} title={a.name} imageUrl={a.imageUrl} actionLabel="Unsubscribe" onActionClick={() => onUnsub("artists", a.id)} onClick={() => navigate(`/artists/${a.id}`)} />
               ))}
             </Grid>
-            <Pagination total={subs.artists.length} pageSize={pageSize} page={artistPage} onChange={setArtistPage} />
+            <Pagination total={artists.length} pageSize={pageSize} page={artistPage} onChange={setArtistPage} />
           </>
         )}
       </Section>
 
       <Section title="Albums">
-        {subs.albums.length === 0 ? <Empty text="No album subscriptions" /> : (
+        {albums.length === 0 ? <Empty text="No album subscriptions" /> : (
           <>
             <Grid>
               {albumItems.map(a => (
                 <Card key={a.id} title={a.name} imageUrl={a.imageUrl} actionLabel="Unsubscribe" onActionClick={() => onUnsub("albums", a.id)} onClick={() => navigate(`/albums/${a.id}`)} />
               ))}
             </Grid>
-            <Pagination total={subs.albums.length} pageSize={pageSize} page={albumPage} onChange={setAlbumPage} />
+            <Pagination total={albums.length} pageSize={pageSize} page={albumPage} onChange={setAlbumPage} />
           </>
         )}
       </Section>
 
       <Section title="Genres">
-        {subs.genres.length === 0 ? <Empty text="No genre subscriptions" /> : (
+        {genres.length === 0 ? <Empty text="No genre subscriptions" /> : (
           <>
             <Grid>
               {genreItems.map(g => (
                 <Card key={g.id} title={g.name} imageUrl={g.imageUrl} actionLabel="Unsubscribe" onActionClick={() => onUnsub("genres", g.id)} onClick={() => navigate(`/discover`)} />
               ))}
             </Grid>
-            <Pagination total={subs.genres.length} pageSize={pageSize} page={genrePage} onChange={setGenrePage} />
+            <Pagination total={genres.length} pageSize={pageSize} page={genrePage} onChange={setGenrePage} />
           </>
         )}
       </Section>
