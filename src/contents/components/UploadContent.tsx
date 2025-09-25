@@ -2,7 +2,6 @@ import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import {getAllAlbums, getAllArtists, uploadContent} from "../service/upload-content-service.ts";
 import {useNavigate} from "react-router-dom";
 
-// ... existing code ...
 export const UploadContent = () => {
     const navigate = useNavigate();
 
@@ -87,7 +86,6 @@ export const UploadContent = () => {
         setMessage(null);
 
         try {
-            // Prepare payload aligned with backend (fileBase64, albumId/albumName decided by mode)
             const payload: any = {
                 title: title.trim(),
                 imageUrl: imageUrl.trim() || undefined,

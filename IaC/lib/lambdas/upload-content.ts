@@ -19,7 +19,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
             albumName,
             genres,
             artistIds,
-            fileBase64, // base64-encoded content file
+            fileBase64, // base64-encoded content file - song
         } = JSON.parse(event.body ?? "{}");
 
         if (!title || !Array.isArray(genres) || !Array.isArray(artistIds) || !fileBase64) {
@@ -39,7 +39,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
 
         const audioBytes = Buffer.from(fileBase64, "base64");
 
-        // Dynamically import ESM module in CJS context
+        // dynamically import ESM module in CJS context (didn't work with "import" keyword)
         const { fileTypeFromBuffer } = await import("file-type");
 
         const filesize = audioBytes.length;
@@ -71,7 +71,6 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
         let finalAlbumId = albumId as string | undefined;
         let finalAlbumName = albumName as string | undefined;
 
-        // If no albumId was provided, we require albumName to create a new one
         if (!albumId) {
             if (!albumName || albumName.trim() === "") {
                 return {
@@ -88,6 +87,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
             finalAlbumName = albumName.trim()
         }
 
+        // Insert into Content table (all albums by PK=Albums)
         if (finalAlbumId && finalAlbumName) {
             await client.send(new PutItemCommand({
                 TableName: contentTable,
@@ -106,7 +106,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
             filetype:  { S: filetype },
             filesize:  { N: filesize.toString() },
             title:     { S: title },
-            imageUrl:  imageUrl ? { S: imageUrl } : { NULL: true }, // OK to be NULL (not an index key)
+            imageUrl:  imageUrl ? { S: imageUrl } : { NULL: true },
             createdAt: { S: now },
             updatedAt: { S: now },
             genres:    { SS: genres },
@@ -120,6 +120,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
             contentItem.albumName = { S: finalAlbumName };
         }
 
+        // Insert into Content table (one item per content)
         await client.send(new PutItemCommand({
             TableName: contentTable,
             Item: contentItem,
@@ -137,9 +138,9 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
             }));
         }
 
-        // Insert into Genres table (one item per genre)
         if (albumId) {
             for (const genre of genres) {
+                // Insert into Genres table (one item per genre)
                 await client.send(new PutItemCommand({
                     TableName: genresTable,
                     Item: {
@@ -147,6 +148,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
                         itemKey: { S: `ALBUM#${albumId}` },
                     }
                 }));
+                // Insert into Genres table (all genres by PK=Genres)
                 await client.send(new PutItemCommand({
                     TableName: genresTable,
                     Item: {
