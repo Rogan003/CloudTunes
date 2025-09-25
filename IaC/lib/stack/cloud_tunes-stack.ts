@@ -279,6 +279,13 @@ export class AppStack extends cdk.Stack {
         );
         subscriptionTable.grantReadWriteData(unsubscribeLambda);
 
+        const getIsSubscribedLambda = new lambdaNode.NodejsFunction(
+            this,
+            "getIsSubscribed",
+            commonLambdaProps("lib/lambdas/get-is-subscribed.ts")
+        );
+        subscriptionTable.grantReadWriteData(getIsSubscribedLambda);
+
         const getSubscriptionsForUserLambda = new lambdaNode.NodejsFunction(
             this,
             "getSubscriptionsForUser",
@@ -447,13 +454,25 @@ export class AppStack extends cdk.Stack {
         // DELETE /subscriptions/{userId}/{type}/{id}
         const unsubscribe = subs.addResource("{userId}")
             .addResource("{type}")
-            .addResource("{id}");
+            .addResource("{typeId}");
         addCorsOptions(unsubscribe, ["DELETE"]);
         addMethodWithLambda(
             unsubscribe,
             "DELETE",
             unsubscribeLambda,
-            requestTemplate().path("userId").body("type").body("id").build()
+            requestTemplate().path("userId").body("type").body("typeId").build()
+        );
+
+        // GET /subscriptions/{userId}/{type}/{id}
+        const getIsSubscribed = subs.addResource("{userId}")
+            .addResource("{type}")
+            .addResource("{typeId}");
+        addCorsOptions(unsubscribe, ["GET"]);
+        addMethodWithLambda(
+            getIsSubscribed,
+            "GET",
+            getIsSubscribedLambda,
+            requestTemplate().path("userId").body("type").body("typeId").build()
         );
 
         // GET /subscriptions/{userId}
