@@ -272,6 +272,13 @@ export class AppStack extends cdk.Stack {
         );
         subscriptionTable.grantReadWriteData(subscribeLambda);
 
+        const unsubscribeLambda = new lambdaNode.NodejsFunction(
+            this,
+            "unsubscribe",
+            commonLambdaProps("lib/lambdas/unsubscribe.ts")
+        );
+        subscriptionTable.grantReadWriteData(unsubscribeLambda);
+
         const getSubscriptionsForUserLambda = new lambdaNode.NodejsFunction(
             this,
             "getSubscriptionsForUser",
@@ -433,8 +440,20 @@ export class AppStack extends cdk.Stack {
             subs,
             "POST",
             subscribeLambda,
-            requestTemplate().body("userId").body("type").body("targetId").build(),
+            requestTemplate().body("userId").body("type").body("typeId").build(),
             api.addModel("SubscriptionModel", subscriptionModelOptions)
+        );
+
+        // DELETE /subscriptions/{userId}/{type}/{id}
+        const unsubscribe = subs.addResource("{userId}")
+            .addResource("{type}")
+            .addResource("{id}");
+        addCorsOptions(unsubscribe, ["DELETE"]);
+        addMethodWithLambda(
+            unsubscribe,
+            "DELETE",
+            unsubscribeLambda,
+            requestTemplate().path("userId").body("type").body("id").build()
         );
 
         // GET /subscriptions/{userId}

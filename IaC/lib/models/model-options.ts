@@ -46,8 +46,8 @@ export const subscriptionModelOptions: ModelOptions = {
         properties: {
             userId: { type: JsonSchemaType.STRING },
             type: { type: JsonSchemaType.STRING }, // ARTIST | ALBUM | GENRE
-            targetId: { type: JsonSchemaType.STRING }
+            typeId: { type: JsonSchemaType.STRING }
         },
-        required: ["userId", "type", "targetId"]
+        required: ["userId", "type", "typeId"]
     }
 };

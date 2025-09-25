@@ -1,4 +1,4 @@
-import { DynamoDBClient, PutItemCommand } from "@aws-sdk/client-dynamodb";
+import {DeleteItemCommand, DynamoDBClient} from "@aws-sdk/client-dynamodb";
 import { Handler } from "aws-lambda";
 import {Subscription} from "aws-cdk-lib/aws-sns";
 
@@ -7,22 +7,21 @@ const subscriptionTable = process.env.SUBSCRIPTION_TABLE!;
 
 export const handler: Handler<Subscription> = async (event: any) => {
     try {
-        const {userId, type, typeId} = JSON.parse(event.body);
-        const SK = `${type.toUpperCase()}#${typeId}`;
-        const now = new Date().toISOString();
+        const userId = event.pathParameters.userId;
+        const type = event.pathParameters.type;
+        const typeId = event.pathParameters.typeId;
 
-        await client.send(new PutItemCommand({
+        const SK = `${type.toUpperCase()}#${typeId}`;
+
+        await client.send(new DeleteItemCommand({
             TableName: subscriptionTable,
-            Item: {
+            Key: {
                 userId: { S: userId },
                 SK: { S: SK },
-                type: { S: type },
-                typeId: { S: typeId },
-                timestamp: { S: now },
             },
         }));
 
-        return {statusCode: 201, body: JSON.stringify({userId, type, typeId, now})};
+        return {statusCode: 204, body: JSON.stringify("Deleted!")};
 
     } catch (error: any) {
         return {

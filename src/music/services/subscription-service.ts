@@ -16,3 +16,18 @@ export async function getSubscriptionsForUser(userId: string): Promise<Subscript
 
     return body as SubscriptionCard[];
 }
+
+export async function unsubscribe(userId: string, type: string, id: string): Promise<string> {
+    const response = await fetch(`${API_BASE_URL}/subscriptions/` + userId + "/" + type + "/" + id, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+    });
+
+    const body = await response.json();
+
+    if (!response.ok) {
+        throw new Error(body.message || `Fetching of subscriptions failed with status ${response.status}`);
+    }
+
+    return body;
+}
