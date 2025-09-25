@@ -5,6 +5,7 @@ import * as lambdaNode from "aws-cdk-lib/aws-lambda-nodejs";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as iam from "aws-cdk-lib/aws-iam";
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
+import * as s3 from 'aws-cdk-lib/aws-s3';
 import { RestApi } from 'aws-cdk-lib/aws-apigateway';
 import { addCorsOptions, addMethodWithLambda } from '../utils/methodUtils';
 import { requestTemplate } from '../utils/requestTemplate';
@@ -72,6 +73,7 @@ export class AuthStack extends cdk.Stack {
         const contentTable = new dynamodb.Table(this, "Contents", {
             tableName: "Contents",
             partitionKey: { name: "contentId", type: dynamodb.AttributeType.STRING },
+            sortKey: { name: "sortKey", type: dynamodb.AttributeType.STRING },
             billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
             removalPolicy: cdk.RemovalPolicy.DESTROY,
         });
@@ -134,6 +136,15 @@ export class AuthStack extends cdk.Stack {
             removalPolicy: cdk.RemovalPolicy.DESTROY,
         });
 
+        const contentBucket = new s3.Bucket(this, "ContentBucket", {
+            bucketName: `cloudtunes-content-${cdk.Aws.ACCOUNT_ID}-${cdk.Aws.REGION}`,
+            blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+            encryption: s3.BucketEncryption.S3_MANAGED,
+            enforceSSL: true,
+            removalPolicy: cdk.RemovalPolicy.DESTROY,
+            autoDeleteObjects: true,
+        });
+
         // Lambda Helpers
         const commonLambdaProps = (entry: string, timeoutSec = 5) => ({
             entry,
@@ -144,6 +155,7 @@ export class AuthStack extends cdk.Stack {
             bundling: {minify: false},
             environment: {
                 CONTENT_TABLE: contentTable.tableName,
+                CONTENT_BUCKET: contentBucket.bucketName,
                 ARTIST_TABLE: artistTable.tableName,
                 GENRES_TABLE: genresTable.tableName,
                 CONTENT_ARTIST_TABLE: contentArtistMap.tableName,
@@ -169,7 +181,20 @@ export class AuthStack extends cdk.Stack {
             "getArtistsByGenre",
             commonLambdaProps("lib/lambdas/get-artists-by-genre.ts")
         );
+        const getArtistsLambda = new lambdaNode.NodejsFunction(
+            this,
+            "getArtists",
+            commonLambdaProps("lib/lambdas/get-artists.ts")
+        );
+        const getAlbumsLambda = new lambdaNode.NodejsFunction(
+            this,
+            "getAlbums",
+            commonLambdaProps("lib/lambdas/get-albums.ts")
+        );
+        genresTable.grantReadData(getAlbumsLambda);
+        contentTable.grantReadData(getAlbumsLambda);
         artistTable.grantReadWriteData(createArtistLambda);
+        artistTable.grantReadData(getArtistsLambda)
         artistTable.grantReadData(getArtistLambda);
         genresTable.grantReadData(getArtistsByGenreLambda);
         genresTable.grantWriteData(createArtistLambda);
@@ -211,6 +236,7 @@ export class AuthStack extends cdk.Stack {
         contentTable.grantReadWriteData(uploadContentLambda);
         genresTable.grantWriteData(uploadContentLambda);
         contentArtistMap.grantReadWriteData(uploadContentLambda);
+        contentBucket.grantReadWrite(uploadContentLambda);
 
         contentTable.grantReadData(getContentByAlbumLambda);
         contentTable.grantReadData(getContentByGenreLambda);
@@ -239,9 +265,11 @@ export class AuthStack extends cdk.Stack {
         // API Gateway
         const api = new RestApi(this, "cloudtunes-api");
 
-        // POST /artists
+        // GET and POST /artists
         const artists = api.root.addResource("artists");
-        addCorsOptions(artists, ["POST"]);
+        addCorsOptions(artists, ["POST", "GET"]);
+        addMethodWithLambda(artists, "GET", getArtistsLambda);
+
         const createArtistTmpl = requestTemplate()
             // .header("Authorization")
             .body("name")
@@ -276,8 +304,12 @@ export class AuthStack extends cdk.Stack {
             requestTemplate().path("genre").build()
         );
 
-        // GET /albums/genre/{genre}
+        // Add: GET /albums
         const albums = api.root.addResource("albums");
+        addCorsOptions(albums, ["GET"]);
+        addMethodWithLambda(albums, "GET", getAlbumsLambda);
+
+        // GET /albums/genre/{genre}
         const albumsByGenre = albums.addResource("genre").addResource("{genre}");
         addCorsOptions(albumsByGenre, ["GET"]);
         addMethodWithLambda(
@@ -299,15 +331,13 @@ export class AuthStack extends cdk.Stack {
         const contents = api.root.addResource("contents");
         addCorsOptions(contents, ["POST"]);
         const uploadContentTmpl = requestTemplate()
-            .body("filename")
-            .body("filetype")
-            .body("filesize")
             .body("title")
             .body("imageUrl")
             .body("albumId")
             .body("albumName")
             .body("genres")
             .body("artistIds")
+            .body("fileBase64")
             .build();
         addMethodWithLambda(
             contents,
@@ -386,6 +416,7 @@ export class AuthStack extends cdk.Stack {
         new cdk.CfnOutput(this, "ContentArtistMapName", { value: contentArtistMap.tableName });
         new cdk.CfnOutput(this, "RatingTableName", { value: ratingTable.tableName });
         new cdk.CfnOutput(this, "SubscriptionTableName", { value: subscriptionTable.tableName });
+        new cdk.CfnOutput(this, "ContentBucketName", { value: contentBucket.bucketName });
         new cdk.CfnOutput(this, "ApiUrl", { value: api.url });
     }
 }
