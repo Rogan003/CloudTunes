@@ -16,12 +16,12 @@ export const handler: Handler<ArtistCard[]> = async () => {
             })
         );
 
-        const albums: ArtistCard[] = []
+        const artists: ArtistCard[] = []
         if (Items) {
             for (const i of Items) {
                 const artistId = i.artist.S!;
                 const artistName = i.artistName.S!;
-                albums.push({
+                artists.push({
                     id: artistId,
                     name: artistName,
                 });
@@ -35,7 +35,7 @@ export const handler: Handler<ArtistCard[]> = async () => {
                 "Access-Control-Allow-Credentials": "true",
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify(albums),
+            body: JSON.stringify(artists),
         };
 
     } catch (error: any) {
