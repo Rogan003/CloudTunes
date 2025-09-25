@@ -6,21 +6,50 @@ import { BackButton } from "../../shared/components/buttons.tsx";
 import { Grid } from "../../shared/components/Grid";
 import { Section } from "../../shared/components/Section";
 import {Empty} from "../../shared/components/Empty.tsx";
-import type {AlbumCard, ArtistCard, Song} from "../models/music-models.ts";
+import type {AlbumCard, ArtistCard, Genre} from "../models/music-models.ts";
+import {getSubscriptionsForUser} from "../services/subscription-service.ts";
+import {TokenStorage} from "../../users/services/user-token-storage-service.ts";
+import type {DecodedIdToken} from "../../users/models/aws-calls.ts";
+import {jwtDecode} from "jwt-decode";
 
 export const SubscriptionsPage: React.FC = () => {
-    // next step: add backend calls for this component, then jump to the subscribe button and related stuff
   const navigate = useNavigate();
   const [artists, setArtists] = useState<ArtistCard[]>([]);
   const [albums, setAlbums] = useState<AlbumCard[]>([]);
-  const [genres, setGenres] = useState<Song[]>([]);
+  const [genres, setGenres] = useState<Genre[]>([]);
   const [artistPage, setArtistPage] = useState(1);
   const [albumPage, setAlbumPage] = useState(1);
   const [genrePage, setGenrePage] = useState(1);
   const pageSize = 6;
 
   useEffect(() => {
-    // loading call to backend
+      const token = TokenStorage.getIdToken();
+      if (!token) {
+          throw new Error("Not authenticated");
+      }
+
+      const decoded = jwtDecode<DecodedIdToken>(token);
+
+      getSubscriptionsForUser(decoded.key).then((subscriptions) => {
+          subscriptions.forEach((subscription) => {
+              if (subscription.type === "artist") {
+                  setArtists([...artists, {
+                      id: subscription.id,
+                      name: subscription.name,
+                  }])
+              } else if (subscription.type === "album") {
+                  setAlbums([...albums, {
+                      id: subscription.id,
+                      name: subscription.name,
+                  }])
+              } else {
+                  setGenres([...genres, {
+                      id: subscription.id,
+                      name: subscription.name,
+                  }])
+              }
+          })
+      })
   }, []);
 
   const artistItems = useMemo(() => paginate(artists, artistPage, pageSize), [artists, artistPage]);

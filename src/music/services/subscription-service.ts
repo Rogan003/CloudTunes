@@ -1,7 +1,9 @@
+import type {SubscriptionCard} from "../models/music-models.ts";
+
 export const API_BASE_URL = "https://zoqpwwqkpd.execute-api.eu-central-1.amazonaws.com/prod";
 
-export async function getSubscriptionsForUser(userId: string): Promise<ArtistCard[]> {
-    const response = await fetch(`${API_BASE_URL}/artists/genre/` + genre, {
+export async function getSubscriptionsForUser(userId: string): Promise<SubscriptionCard[]> {
+    const response = await fetch(`${API_BASE_URL}/subscriptions/` + userId, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
     });
@@ -12,5 +14,5 @@ export async function getSubscriptionsForUser(userId: string): Promise<ArtistCar
         throw new Error(body.message || `Fetching of subscriptions failed with status ${response.status}`);
     }
 
-    return body as ArtistCard[];
+    return body as SubscriptionCard[];
 }

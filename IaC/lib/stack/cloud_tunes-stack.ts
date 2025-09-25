@@ -197,6 +197,7 @@ export class AppStack extends cdk.Stack {
         artistTable.grantReadWriteData(createArtistLambda);
         artistTable.grantReadData(getArtistsLambda)
         artistTable.grantReadData(getArtistLambda);
+        artistTable.grantReadData(getArtistsByGenreLambda);
         genresTable.grantReadData(getArtistsByGenreLambda);
         genresTable.grantWriteData(createArtistLambda);
 
@@ -206,6 +207,7 @@ export class AppStack extends cdk.Stack {
             commonLambdaProps("lib/lambdas/get-albums-by-genre.ts")
         );
         genresTable.grantReadData(getAlbumsByGenreLambda);
+        contentTable.grantReadData(getAlbumsByGenreLambda);
 
         const getGenres = new lambdaNode.NodejsFunction(
             this,
@@ -269,6 +271,15 @@ export class AppStack extends cdk.Stack {
             commonLambdaProps("lib/lambdas/subscribe.ts")
         );
         subscriptionTable.grantReadWriteData(subscribeLambda);
+
+        const getSubscriptionsForUserLambda = new lambdaNode.NodejsFunction(
+            this,
+            "getSubscriptionsForUser",
+            commonLambdaProps("lib/lambdas/get-subscriptions-for-user.ts")
+        );
+        subscriptionTable.grantReadData(getSubscriptionsForUserLambda);
+        artistTable.grantReadData(getSubscriptionsForUserLambda);
+        contentTable.grantReadData(getSubscriptionsForUserLambda);
 
         // API Gateway
         const api = new RestApi(this, "cloudtunes-api");
@@ -424,6 +435,16 @@ export class AppStack extends cdk.Stack {
             subscribeLambda,
             requestTemplate().body("userId").body("type").body("targetId").build(),
             api.addModel("SubscriptionModel", subscriptionModelOptions)
+        );
+
+        // GET /subscriptions/{userId}
+        const subscriptionsForUser = subs.addResource("{userId}");
+        addCorsOptions(subscriptionsForUser, ["GET"]);
+        addMethodWithLambda(
+            subscriptionsForUser,
+            "GET",
+            getSubscriptionsForUserLambda,
+            requestTemplate().path("userId").build()
         );
 
         // Outputs

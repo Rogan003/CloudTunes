@@ -25,8 +25,8 @@ export const handler: Handler<AlbumCard[]> = async (event: any) => {
                     new GetItemCommand({
                         TableName: contentTable,
                         Key: {
-                            PK: { S: "ALBUMS" },
-                            SK: { S: `${albumId}` }
+                            contentId: { S: "ALBUMS" },
+                            sortKey: { S: `${albumId}` }
                         }
                     })
                 );
