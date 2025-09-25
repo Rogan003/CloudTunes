@@ -218,6 +218,11 @@ export class AuthStack extends cdk.Stack {
             "uploadContent",
             commonLambdaProps("lib/lambdas/upload-content.ts", 10)
         );
+        const getContentLambda = new lambdaNode.NodejsFunction(
+            this,
+            "getContent",
+            commonLambdaProps("lib/lambdas/get-content.ts")
+        );
         const getContentByArtistLambda = new lambdaNode.NodejsFunction(
             this,
             "getContentByArtist",
@@ -238,6 +243,8 @@ export class AuthStack extends cdk.Stack {
         contentArtistMap.grantReadWriteData(uploadContentLambda);
         contentBucket.grantReadWrite(uploadContentLambda);
 
+        contentTable.grantReadData(getContentLambda);
+        contentBucket.grantRead(getContentLambda);
         contentTable.grantReadData(getContentByAlbumLambda);
         contentTable.grantReadData(getContentByGenreLambda);
         genresTable.grantReadData(getContentByGenreLambda);
@@ -345,6 +352,16 @@ export class AuthStack extends cdk.Stack {
             uploadContentLambda,
             uploadContentTmpl,
             api.addModel("UploadContentModel", uploadContentModelOptions)
+        );
+
+        // GET /contents/{contentId}
+        const singleContent = contents.addResource("contentId");
+        addCorsOptions(singleContent, ["GET"]);
+        addMethodWithLambda(
+            singleContent,
+            "GET",
+            getContentLambda,
+            requestTemplate().path("contentId").build()
         );
 
         // GET /contents/artist/{artistId}

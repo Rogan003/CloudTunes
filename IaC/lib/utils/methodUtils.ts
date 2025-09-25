@@ -35,6 +35,16 @@ export function addMethodWithLambda(
           selectionPattern: "4\\d\\d",
         },
         {
+          statusCode: "403",
+          responseParameters: { [ALLOW_ORIGIN_HEADER]: "'*'" },
+          selectionPattern: "4\\d\\d",
+        },
+        {
+          statusCode: "404",
+          responseParameters: { [ALLOW_ORIGIN_HEADER]: "'*'" },
+          selectionPattern: "4\\d\\d",
+        },
+        {
           statusCode: "409",
           responseParameters: { [ALLOW_ORIGIN_HEADER]: "'*'" },
           selectionPattern: "4\\d\\d",
@@ -54,6 +64,8 @@ export function addMethodWithLambda(
         { statusCode: "200", responseParameters: { [ALLOW_ORIGIN_HEADER]: true } },
         { statusCode: "201", responseParameters: { [ALLOW_ORIGIN_HEADER]: true } },
         { statusCode: "400", responseParameters: { [ALLOW_ORIGIN_HEADER]: true } },
+        { statusCode: "403", responseParameters: { [ALLOW_ORIGIN_HEADER]: true } },
+        { statusCode: "404", responseParameters: { [ALLOW_ORIGIN_HEADER]: true } },
         { statusCode: "409", responseParameters: { [ALLOW_ORIGIN_HEADER]: true } },
         { statusCode: "500", responseParameters: { [ALLOW_ORIGIN_HEADER]: true } },
       ],
