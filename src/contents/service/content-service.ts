@@ -1,4 +1,4 @@
-import type { UploadContentRequest, UploadContentResponse } from "../models/aws-calls.ts";
+import type { GetContentResponse, UploadContentRequest, UploadContentResponse } from "../models/aws-calls.ts";
 import type {AlbumCard, ArtistCard} from "../../music/models/music-models.ts";
 
 // API Gateway URL (or from .env)
@@ -42,5 +42,18 @@ export async function getAllArtists(): Promise<ArtistCard[]> {
         throw new Error((body?.message as string) || `Failed to load artists (${res.status})`);
     }
     return body as ArtistCard[];
+}
+
+export async function getContent(contentId: string): Promise<GetContentResponse> {
+    const response = await fetch(`${API_BASE_URL}/contents/${contentId}`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+    });
+    const body = await response.json();
+    if (!response.ok) {
+        throw new Error((body?.message as string) || `Failed to load artists (${response.status})`);
+    }
+
+    return body as GetContentResponse;
 }
 

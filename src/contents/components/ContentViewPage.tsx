@@ -1,35 +1,39 @@
 import { useEffect, useRef, useState, type ChangeEvent, type FC } from "react";
-import type { Content } from "../models/content-models";
 import { useParams } from "react-router-dom";
+import { getContent } from "../service/content-service";
+import type { GetContentResponse } from "../models/aws-calls";
 
 
 export const ContentView: FC = () => {
     const { contentId } = useParams();
     const audioRef = useRef<HTMLAudioElement | null>(null);
+    const [content, setContent] = useState<GetContentResponse | null>(null);
     const [isPlaying, setIsPlaying] = useState(false);
     const [progress, setProgress] = useState(0);
 
     // hardcoded examples for now
-    const content = {
-        contentId: 1,
-        filename: "filename",
-        filetype: "filetype",
-        filesize: "123",
-        title: "title",
-        imageUrl: "https://elearningchips.com/wp-content/uploads/2017/02/ph_024_043_pw1.jpg",
-        albumId: 1,
-        albumName: "albumname",
-        createdAt: "12/12/2025",
-        updatedAt: "13/12/2025",
-        genres: ["pop", "rock"],
-        artistIds: [1, 2]
-    };
-    const fileUrl = "https://file-examples.com/storage/fee1b0f7cc68d56d19535f0/2017/11/file_example_MP3_700KB.mp3";
+    // const content = {
+    //     contentId: 1,
+    //     filename: "filename",
+    //     filetype: "filetype",
+    //     filesize: "123",
+    //     title: "title",
+    //     imageUrl: "https://elearningchips.com/wp-content/uploads/2017/02/ph_024_043_pw1.jpg",
+    //     albumId: 1,
+    //     albumName: "albumname",
+    //     createdAt: "12/12/2025",
+    //     updatedAt: "13/12/2025",
+    //     genres: ["pop", "rock"],
+    //     artistIds: [1, 2]
+    // };
+    // const fileUrl = "https://file-examples.com/storage/fee1b0f7cc68d56d19535f0/2017/11/file_example_MP3_700KB.mp3";
 
     useEffect(() => {
         const fetchContent = async () => {
             try {
                 if (!contentId) return;
+                const content: GetContentResponse = await getContent(contentId);
+                setContent(content);
 
             } catch (err: any) {
                 alert("An error occurred while fetching content: " + err.message);
@@ -69,24 +73,25 @@ export const ContentView: FC = () => {
         >
             {/* Left side - content info */}
             <div style={{ flex: 1, textAlign: "center" }}>
-                <h2 style={{ margin: "0 0 0.5rem" }}>{content.title}</h2>
+                <h2 style={{ margin: "0 0 0.5rem" }}>{content?.title}</h2>
                 <p style={{ margin: "0.3rem 0" }}>
-                <strong>Album:</strong> {content.albumName}
+                <strong>Album:</strong> {content?.albumName}
                 </p>
                 <p style={{ margin: "0.3rem 0" }}>
-                <strong>Genres:</strong> {content.genres.join(", ")}
+                <strong>Genres:</strong> {content?.genres.join(", ")}
                 </p>
                 <p style={{ margin: "0.3rem 0" }}>
-                <strong>Filesize:</strong> {content.filesize}
+                <strong>Filesize:</strong> {content?.filesize}
                 </p>
                 <p style={{ margin: "0.3rem 0" }}>
-                <strong>Uploaded:</strong> {new Date(content.createdAt).toLocaleString()}
+                <strong>Uploaded:</strong> 
+                {content !== null ? new Date(content?.createdAt).toLocaleString() : new Date().toLocaleDateString()}
                 </p>
             </div>
 
             {/* Right side - image and player */}
             <div style={{ flex: 1, textAlign: "center" }}>
-                {content.imageUrl && (
+                {content?.imageUrl && (
                     <img
                         src={content.imageUrl}
                         alt={content.title}
@@ -102,7 +107,7 @@ export const ContentView: FC = () => {
                 {/* Audio player */}
                 <audio
                     ref={audioRef}
-                    src={fileUrl}
+                    src={content?.fileUrl}
                     onTimeUpdate={handleTimeUpdate}
                     onEnded={() => setIsPlaying(false)}
                 />
