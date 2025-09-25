@@ -355,7 +355,7 @@ export class AuthStack extends cdk.Stack {
         );
 
         // GET /contents/{contentId}
-        const singleContent = contents.addResource("contentId");
+        const singleContent = contents.addResource("{contentId}");
         addCorsOptions(singleContent, ["GET"]);
         addMethodWithLambda(
             singleContent,
