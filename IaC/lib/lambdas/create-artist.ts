@@ -31,6 +31,7 @@ export const handler: Handler<Artist> = async (event: any) => {
             TableName: tableName,
             Item: {
                 artistId: {S: artistId},
+                itemKey: { S: artistId },
                 name: {S: name},
                 bio: {S: bio},
                 genres: {SS: genres}
@@ -43,8 +44,7 @@ export const handler: Handler<Artist> = async (event: any) => {
             TableName: tableName,
             Item: {
                 artistId: { S: "Artists" },
-                artist: { S: artistId },
-                artistName: { S: name },
+                itemKey: { S: artistId },
             }
         }));
 

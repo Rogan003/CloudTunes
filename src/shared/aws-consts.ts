@@ -1,5 +1,5 @@
 export const REGION = "eu-central-1";
-export const USER_POOL_CLIENT_ID = "6vmkb912jv1tcdlescg2m1o6sb";
+export const USER_POOL_CLIENT_ID = "2vr4q1f0vj3o6mg2at5or9s91u";
 
 // DynamoDB tables
 export const CONTENT_TABLE = "Contents";

@@ -1,4 +1,4 @@
-import {DynamoDBClient, QueryCommand} from "@aws-sdk/client-dynamodb";
+import {DynamoDBClient, GetItemCommand, QueryCommand} from "@aws-sdk/client-dynamodb";
 import type { Handler } from "aws-lambda";
 import {ArtistCard} from "../models/music-models";
 
@@ -12,19 +12,25 @@ export const handler: Handler<ArtistCard[]> = async () => {
                 TableName: artistTable,
                 KeyConditionExpression: "artistId = :pk",
                 ExpressionAttributeValues: { ":pk": { S: "Artists" } },
-                ProjectionExpression: "artist, artistName",
+                ProjectionExpression: "itemKey",
             })
         );
 
-        const artists: ArtistCard[] = []
+        const artists = []
+
         if (Items) {
             for (const i of Items) {
                 const artistId = i.artist.S!;
-                const artistName = i.artistName.S!;
-                artists.push({
-                    id: artistId,
-                    name: artistName,
-                });
+                const { Item } = await client.send(
+                    new GetItemCommand({
+                        TableName: artistTable,
+                        Key: {
+                            artistId: { S: artistId },
+                            itemKey: { S: artistId }
+                        },
+                    })
+                );
+                if (Item) artists.push(Item);
             }
         }
 
@@ -39,6 +45,14 @@ export const handler: Handler<ArtistCard[]> = async () => {
         };
 
     } catch (error: any) {
-        return { statusCode: 500, body: JSON.stringify({ message: error.message }) };
+        return {
+            statusCode: 500,
+            headers: {
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Credentials": "true",
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ message: error.message }),
+        };
     }
 };
