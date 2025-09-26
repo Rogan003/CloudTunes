@@ -1,6 +1,6 @@
 import type {AlbumCard, ArtistCard} from "../models/music-models.ts";
 
-export const API_BASE_URL = "https://zoqpwwqkpd.execute-api.eu-central-1.amazonaws.com/prod";
+export const API_BASE_URL = "https://yztmnnnu7d.execute-api.eu-central-1.amazonaws.com/prod";
 
 export async function getArtistsForGenre(genre: string): Promise<ArtistCard[]> {
     const response = await fetch(`${API_BASE_URL}/artists/genre/` + genre, {
