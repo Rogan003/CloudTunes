@@ -16,6 +16,7 @@
     "aws-cdk-lib": "^2.214.0",
     "aws-lambda": "^1.0.7",
     "file-type": "^21.0.0",
+    "idb": "^8.0.3",
     "jwt-decode": "^4.0.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
