@@ -57,13 +57,8 @@ export async function getContent(contentId: string): Promise<GetContentResponse>
     const content = body as GetContentResponse;
 
     let blob = await getFromCache(contentId);
-    if (!blob) {
-        const fileResponse = await fetch(content.fileUrl);
-        blob = await fileResponse.blob();
-        await saveToCache(contentId, blob);
-    }
+    if (blob) content.fileUrl = URL.createObjectURL(blob);
 
-    content.fileUrl = URL.createObjectURL(blob);
     return content;
 }
 

@@ -21,3 +21,8 @@ export async function getFromCache(contentId: string): Promise<Blob | null> {
   const db = await getDB();
   return db.get(STORE_NAME, contentId);
 }
+
+export async function removeFromCache(contentId: string) {
+    const db = await getDB();
+    await db.delete(STORE_NAME, contentId);
+}
