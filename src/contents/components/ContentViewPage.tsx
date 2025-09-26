@@ -116,7 +116,7 @@ export const ContentView: FC = () => {
                     <strong>Filesize:</strong> {content?.filesize}
                     </p>
                     <p style={{ margin: "0.3rem 0" }}>
-                    <strong>Uploaded:</strong> 
+                    <strong>Uploaded:</strong>
                     {content !== null ? new Date(content?.createdAt).toLocaleString() : new Date().toLocaleDateString()}
                     </p>
                 </div>
