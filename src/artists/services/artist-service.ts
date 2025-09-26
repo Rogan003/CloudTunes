@@ -1,10 +1,10 @@
-import type { DecodedIdToken } from "../../users/models/aws-calls.ts";
+//import type { DecodedIdToken } from "../../users/models/aws-calls.ts";
 import { TokenStorage } from "../../users/services/user-token-storage-service.ts";
 import type { Artist } from "../models/artist-model.ts";
 import type { CreateArtistRequest } from "../models/aws-calls.ts";
-import { jwtDecode } from "jwt-decode";
+//import { jwtDecode } from "jwt-decode";
 
-const API_URL = "https://zoqpwwqkpd.execute-api.eu-central-1.amazonaws.com/prod";
+const API_BASE_URL = "https://yztmnnnu7d.execute-api.eu-central-1.amazonaws.com/prod";
 
 export async function createArtist(artistRequest: CreateArtistRequest): Promise<Artist> {
     try {
@@ -18,7 +18,7 @@ export async function createArtist(artistRequest: CreateArtistRequest): Promise<
         //     throw new Error("Unauthorized: Only admins can create artists");
         // }
         console.log(artistRequest)
-        const response = await fetch(`${API_URL}/artists`, {
+        const response = await fetch(`${API_BASE_URL}/artists`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"

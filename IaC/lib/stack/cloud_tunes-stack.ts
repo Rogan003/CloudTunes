@@ -11,7 +11,7 @@ import { addCorsOptions, addMethodWithLambda } from '../utils/methodUtils';
 import { requestTemplate } from '../utils/requestTemplate';
 import { createArtistModelOptions, uploadContentModelOptions, ratingModelOptions, subscriptionModelOptions} from "../models/model-options";
 
-export class AuthStack extends cdk.Stack {
+export class AppStack extends cdk.Stack {
     constructor(scope: Construct, id: string, props?: cdk.StackProps) {
         super(scope, id, props);
 
@@ -89,6 +89,7 @@ export class AuthStack extends cdk.Stack {
         const artistTable = new dynamodb.Table(this, "Artists", {
             tableName: "Artists",
             partitionKey: {name: "artistId", type: dynamodb.AttributeType.STRING},
+            sortKey: {name: "itemKey", type: dynamodb.AttributeType.STRING},
             billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
             removalPolicy: cdk.RemovalPolicy.DESTROY,
         });
@@ -276,7 +277,6 @@ export class AuthStack extends cdk.Stack {
         const artists = api.root.addResource("artists");
         addCorsOptions(artists, ["POST", "GET"]);
         addMethodWithLambda(artists, "GET", getArtistsLambda);
-
         const createArtistTmpl = requestTemplate()
             // .header("Authorization")
             .body("name")

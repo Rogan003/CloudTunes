@@ -6,11 +6,11 @@ export interface Content {
     title: string;
     imageUrl?: string; // path inside S3
     albumId: string;
-    albumName: string;
     createdAt: string;
     updatedAt: string;
     genres: string[];
     artistIds: string[];
+    audioS3Key: string;
 }
 
 export interface Rating {

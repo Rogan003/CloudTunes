@@ -66,12 +66,22 @@ export const UploadContent = () => {
                 if (!cancelled) {
                     setAlbums(albumsRes);
                     setArtists(artistsRes);
-                    if (albumsRes.length && !selectedAlbumId) setSelectedAlbumId(albumsRes[0].id);
+
+                    if (albumsRes.length > 0) {
+                        setAlbumMode("existing");
+                        if (!selectedAlbumId) setSelectedAlbumId(albumsRes[0].id);
+                    } else {
+                        setAlbumMode("new");
+                        setSelectedAlbumId("");
+                    }
                 }
             } catch {
                 if (!cancelled) {
                     setAlbums([]);
                     setArtists([]);
+
+                    setAlbumMode("new");
+                    setSelectedAlbumId("");
                 }
             }
         };

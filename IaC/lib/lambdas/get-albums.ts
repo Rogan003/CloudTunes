@@ -39,7 +39,16 @@ export const handler: Handler<AlbumCard[]> = async () => {
         };
 
     } catch (error: any) {
-        return { statusCode: 500, body: JSON.stringify({ message: error.message }) };
+        return {
+            statusCode: 500,
+            headers: {
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Credentials": "true",
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ message: error.message }),
+        };
+
     }
 };
 
