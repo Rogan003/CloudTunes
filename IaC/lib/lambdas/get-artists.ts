@@ -16,11 +16,12 @@ export const handler: Handler<ArtistCard[]> = async () => {
             })
         );
 
-        const artists = []
+        const artists: ArtistCard[] = []
 
         if (Items) {
             for (const i of Items) {
-                const artistId = i.artist.S!;
+                const artistId = i.itemKey.S!;
+
                 const { Item } = await client.send(
                     new GetItemCommand({
                         TableName: artistTable,
@@ -28,9 +29,18 @@ export const handler: Handler<ArtistCard[]> = async () => {
                             artistId: { S: artistId },
                             itemKey: { S: artistId }
                         },
+                        ProjectionExpression: "artistId, #n, imageUrl",
+                        ExpressionAttributeNames: { "#n": "name" }
                     })
                 );
-                if (Item) artists.push(Item);
+
+                if (Item?.artistId?.S && Item?.name?.S) {
+                    artists.push({
+                        id: Item.artistId.S,
+                        name: Item.name.S,
+                        imageUrl: Item.imageUrl?.S,
+                    });
+                }
             }
         }
 
