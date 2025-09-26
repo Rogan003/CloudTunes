@@ -1,6 +1,6 @@
 import type { GetContentResponse, UploadContentRequest, UploadContentResponse } from "../models/aws-calls.ts";
 import type {AlbumCard, ArtistCard} from "../../music/models/music-models.ts";
-import { getFromCache } from "./cache-service.ts";
+import { getFromCache, saveToCache } from "./cache-service.ts";
 
 // API Gateway URL (or from .env)
 export const API_BASE_URL = "https://yztmnnnu7d.execute-api.eu-central-1.amazonaws.com/prod";
