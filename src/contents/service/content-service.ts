@@ -1,5 +1,6 @@
 import type { GetContentResponse, UploadContentRequest, UploadContentResponse } from "../models/aws-calls.ts";
 import type {AlbumCard, ArtistCard} from "../../music/models/music-models.ts";
+import { getFromCache, saveToCache } from "./cache-service.ts";
 
 // API Gateway URL (or from .env)
 export const API_BASE_URL = "https://zoqpwwqkpd.execute-api.eu-central-1.amazonaws.com/prod";
@@ -51,9 +52,18 @@ export async function getContent(contentId: string): Promise<GetContentResponse>
     });
     const body = await response.json();
     if (!response.ok) {
-        throw new Error((body?.message as string) || `Failed to load artists (${response.status})`);
+        throw new Error((body?.message as string) || `Failed to load content (${response.status})`);
+    }
+    const content = body as GetContentResponse;
+
+    let blob = await getFromCache(contentId);
+    if (!blob) {
+        const fileResponse = await fetch(content.fileUrl);
+        blob = await fileResponse.blob();
+        await saveToCache(contentId, blob);
     }
 
-    return body as GetContentResponse;
+    content.fileUrl = URL.createObjectURL(blob);
+    return content;
 }
 

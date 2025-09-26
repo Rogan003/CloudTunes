@@ -143,6 +143,17 @@ export class AuthStack extends cdk.Stack {
             enforceSSL: true,
             removalPolicy: cdk.RemovalPolicy.DESTROY,
             autoDeleteObjects: true,
+            cors: [
+                {
+                    allowedOrigins: ['*'],
+                    allowedMethods: [
+                        s3.HttpMethods.GET,
+                        s3.HttpMethods.HEAD,
+                    ],
+                    allowedHeaders: ['*'],
+                    maxAge: 3000,
+                },
+            ],
         });
 
         // Lambda Helpers
