@@ -42,8 +42,18 @@ export const ContentView: FC = () => {
             const response = await fetch(content.fileUrl);
             const blob = await response.blob();
             await saveToCache(content.contentId, blob);
+            handleDownload(blob, content.filename);
             setIsDownloaded(true);
         }
+    };
+
+    const handleDownload = (blob: Blob, filename: string) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
     };
 
     const handleLoadedMetadata = () => {
