@@ -1,5 +1,5 @@
 import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
-import {getAllAlbums, getAllArtists, uploadContent} from "../service/upload-content-service.ts";
+import {getAllAlbums, getAllArtists, uploadContent} from "../service/content-service.ts";
 import {useNavigate} from "react-router-dom";
 
 export const UploadContent = () => {

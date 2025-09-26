@@ -11,6 +11,7 @@ import { AlbumSongsPage } from "./music/components/AlbumSongsPage";
 // import { SubscriptionsPage } from "./music/components/SubscriptionsPage";
 // import { AddSubscriptionPage } from "./music/components/AddSubscriptionPage";
 import {UploadContent} from "./contents/components/UploadContent.tsx";
+import { ContentView } from './contents/components/ContentViewPage.tsx';
 
 function App() {
     return (
@@ -27,6 +28,7 @@ function App() {
                 {/*<Route path="/subscriptions" element={<SubscriptionsPage />} />*/}
                 {/*<Route path="/subscriptions/add" element={<AddSubscriptionPage />} />*/}
                 <Route path="/upload-content" element={<UploadContent/>} />
+                <Route path="/songs/:contentId" element={<ContentView/>} />
             </Routes>
         </BrowserRouter>
     )
