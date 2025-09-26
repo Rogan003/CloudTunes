@@ -6,27 +6,11 @@ import type { GetContentResponse } from "../models/aws-calls";
 
 export const ContentView: FC = () => {
     const { contentId } = useParams();
+    const [duration, setDuration] = useState(0);
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const [content, setContent] = useState<GetContentResponse | null>(null);
     const [isPlaying, setIsPlaying] = useState(false);
     const [progress, setProgress] = useState(0);
-
-    // hardcoded examples for now
-    // const content = {
-    //     contentId: 1,
-    //     filename: "filename",
-    //     filetype: "filetype",
-    //     filesize: "123",
-    //     title: "title",
-    //     imageUrl: "https://elearningchips.com/wp-content/uploads/2017/02/ph_024_043_pw1.jpg",
-    //     albumId: 1,
-    //     albumName: "albumname",
-    //     createdAt: "12/12/2025",
-    //     updatedAt: "13/12/2025",
-    //     genres: ["pop", "rock"],
-    //     artistIds: [1, 2]
-    // };
-    // const fileUrl = "https://file-examples.com/storage/fee1b0f7cc68d56d19535f0/2017/11/file_example_MP3_700KB.mp3";
 
     useEffect(() => {
         const fetchContent = async () => {
@@ -41,7 +25,14 @@ export const ContentView: FC = () => {
         };
 
         fetchContent();
+
     }, []);
+
+    const handleLoadedMetadata = () => {
+        if (audioRef.current) {
+            setDuration(audioRef.current.duration);
+        }
+    };
 
     const togglePlay = () => {
         if (!audioRef.current) return;
@@ -51,16 +42,22 @@ export const ContentView: FC = () => {
     };
 
     const handleTimeUpdate = () => {
-        if (!audioRef.current) return;
-        const percent = (audioRef.current.currentTime / audioRef.current.duration) * 100;
+        if (!audioRef.current || duration === 0) return;
+        const percent = (audioRef.current.currentTime / duration) * 100;
         setProgress(percent);
     };
 
     const handleSeek = (e: ChangeEvent<HTMLInputElement>) => {
-        if (!audioRef.current) return;
-        const newTime = (parseFloat(e.target.value) / 100) * audioRef.current.duration;
+        if (!audioRef.current || duration === 0) return;
+        const newTime = (parseFloat(e.target.value) / 100) * duration;
         audioRef.current.currentTime = newTime;
     };
+
+    function formatTime(time: number): string {
+        const minutes = Math.floor(time / 60);
+        const seconds = Math.floor(time % 60);
+        return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+    }
 
     return (
         <div
@@ -105,12 +102,15 @@ export const ContentView: FC = () => {
                 )}
 
                 {/* Audio player */}
-                <audio
-                    ref={audioRef}
-                    src={content?.fileUrl}
-                    onTimeUpdate={handleTimeUpdate}
-                    onEnded={() => setIsPlaying(false)}
-                />
+                {content?.fileUrl && (
+                    <audio
+                        ref={audioRef}
+                        src={content.fileUrl}
+                        onLoadedMetadata={handleLoadedMetadata}
+                        onTimeUpdate={handleTimeUpdate}
+                        onEnded={() => setIsPlaying(false)}
+                    />
+                )}
 
                 <div style={{ display: "flex", justifyContent: "center", gap: "1rem" }}>
                 <button
@@ -128,14 +128,18 @@ export const ContentView: FC = () => {
                 </button>
                 </div>
 
-                <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    value={progress}
-                    onChange={handleSeek}
-                    style={{ width: "100%", marginTop: "1rem" }}
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span>{formatTime(audioRef.current?.currentTime || 0)}</span>
+                    <input
+                        type="range"
+                        min={0}
+                        max={100}
+                        value={progress}
+                        onChange={handleSeek}
+                        style={{ flex: 1 }}
                     />
+                    <span>{formatTime(duration)}</span>
+                </div>
             </div>
         </div>
     );
