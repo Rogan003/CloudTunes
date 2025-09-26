@@ -18,11 +18,11 @@ export interface UploadContentResponse {
     title: string;
     imageUrl?: string;
     albumId?: string;
-    albumName?: string;
     genres: string[];
     artistIds: string[];
     createdAt: string;
     updatedAt: string;
+    audioS3Key: string;
 }
 
 export interface GetContentResponse {
