@@ -1,7 +1,8 @@
 import { DynamoDBClient, PutItemCommand } from "@aws-sdk/client-dynamodb";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
-import { APIGatewayProxyHandlerV2 } from "aws-lambda";
+import { Handler} from "aws-lambda";
 import { v4 as uuidv4 } from "uuid";
+import {Content} from "../models/content-models";
 
 const client = new DynamoDBClient({});
 const s3 = new S3Client({});
@@ -10,7 +11,12 @@ const contentArtistTable = process.env.CONTENT_ARTIST_TABLE!;
 const genresTable = process.env.GENRES_TABLE!;
 const contentBucket = process.env.CONTENT_BUCKET!;
 
-export const handler: APIGatewayProxyHandlerV2 = async (event) => {
+async function detectFile(buffer: Buffer) {
+    const { fileTypeFromBuffer } = await import("file-type");
+    return fileTypeFromBuffer(buffer);
+}
+
+export const handler: Handler<Content> = async (event: any) => {
     try {
         const {
             title,
@@ -39,11 +45,8 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
 
         const audioBytes = Buffer.from(fileBase64, "base64");
 
-        // dynamically import ESM module in CJS context (didn't work with "import" keyword)
-        const { fileTypeFromBuffer } = await import("file-type");
-
         const filesize = audioBytes.length;
-        const detected = await fileTypeFromBuffer(audioBytes);
+        const detected = await detectFile(audioBytes);
         const filetype = detected?.mime ?? "application/octet-stream";
         const ext = detected?.ext ? `.${detected.ext}` : "";
         const audioS3Key = `audio/${contentId}${ext}`;
@@ -111,13 +114,10 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
             updatedAt: { S: now },
             genres:    { SS: genres },
             artistIds: { SS: artistIds },
-            audioS3Key:{ S: audioS3Key },
+            audioS3Key: { S: audioS3Key },
         };
         if (finalAlbumId) {
             contentItem.albumId = { S: finalAlbumId };
-        }
-        if (finalAlbumName) {
-            contentItem.albumName = { S: finalAlbumName };
         }
 
         // Insert into Content table (one item per content)
@@ -168,16 +168,16 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
             },
             body: JSON.stringify({
                 contentId,
-                filename: filename,
-                filetype: filetype,
-                filesize: filesize,
+                filename,
+                filetype,
+                filesize,
                 title,
                 imageUrl,
                 albumId,
-                createdAt: now,
-                updatedAt: now,
                 genres,
                 artistIds,
+                createdAt: now,
+                updatedAt: now,
                 audioS3Key,
             }),
         };
