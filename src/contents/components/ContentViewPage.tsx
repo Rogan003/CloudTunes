@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState, type ChangeEvent, type FC } from "react";
-import { useParams } from "react-router-dom";
-import { getContent } from "../service/content-service";
+import {useNavigate, useParams} from "react-router-dom";
+import {deleteContent, editContent, getAllAlbums, getAllArtists, getContent} from "../service/content-service";
 import type { GetContentResponse } from "../models/aws-calls";
 import { getFromCache, removeFromCache, saveToCache } from "../service/cache-service";
 
 
 export const ContentView: FC = () => {
     const { contentId } = useParams();
+    const navigate = useNavigate();
     const [duration, setDuration] = useState(0);
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const [content, setContent] = useState<GetContentResponse | null>(null);
@@ -14,6 +15,27 @@ export const ContentView: FC = () => {
     const [isPlaying, setIsPlaying] = useState(false);
     const [progress, setProgress] = useState(0);
     const [isDownloaded, setIsDownloaded] = useState(false);
+
+    // Edit mode state (mirrors UploadContent UI)
+    const [isEditing, setIsEditing] = useState(false);
+    const [title, setTitle] = useState<string>("");
+    const [imageUrl, setImageUrl] = useState<string>("");
+    const [albums, setAlbums] = useState<Array<{ id: string; name: string; imageUrl?: string }>>([]);
+    const [albumMode, setAlbumMode] = useState<"existing" | "new">("existing");
+    const [selectedAlbumId, setSelectedAlbumId] = useState<string>("");
+    const [newAlbumName, setNewAlbumName] = useState<string>("");
+    const [artists, setArtists] = useState<Array<{ id: string; name: string }>>([]);
+    const [selectedArtistIds, setSelectedArtistIds] = useState<string[]>([]);
+    const [genreInput, setGenreInput] = useState<string>("");
+    const [genres, setGenres] = useState<string[]>([]);
+    const toggleArtist = (id: string) =>
+        setSelectedArtistIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+    const addGenre = () => {
+        const g = genreInput.trim();
+        if (g && !genres.includes(g)) setGenres((prev) => [...prev, g]);
+        setGenreInput("");
+    };
+    const removeGenre = (g: string) => setGenres((prev) => prev.filter((x) => x !== g));
 
     useEffect(() => {
         const fetchContent = async () => {
@@ -27,7 +49,7 @@ export const ContentView: FC = () => {
                 const content: GetContentResponse = await getContent(contentId);
                 setContent(content);
                 if (!audioFileUrl) setAudioFileUrl(content.fileUrl);
-            
+
             } catch (err: any) {
                 alert("An error occurred while fetching content: " + err.message);
             }
@@ -66,6 +88,50 @@ export const ContentView: FC = () => {
         }
     };
 
+    useEffect(() => {
+        if (!isEditing || !content) return;
+
+        // Prefill from current content
+        setTitle(content.title ?? "");
+        setImageUrl(content.imageUrl ?? "");
+        setGenres(Array.isArray(content.genres) ? content.genres.slice() : []);
+        setSelectedArtistIds(Array.isArray(content.artistIds) ? content.artistIds.slice() : []);
+        if (content.albumId) {
+            setAlbumMode("existing");
+            setSelectedAlbumId(content.albumId);
+            setNewAlbumName("");
+        } else {
+            setAlbumMode("new");
+            setSelectedAlbumId("");
+            setNewAlbumName(content.albumName ?? "");
+        }
+
+        // Load selectable albums and artists
+        let cancelled = false;
+        const load = async () => {
+            try {
+                const [albumsRes, artistsRes] = await Promise.all([getAllAlbums(), getAllArtists()]);
+                if (!cancelled) {
+                    setAlbums(albumsRes);
+                    setArtists(artistsRes);
+                    // If existing album no longer present, fall back to first
+                    if (albumMode === "existing") {
+                        const exists = albumsRes.some(a => a.id === (content.albumId ?? ""));
+                        if (!exists && albumsRes.length > 0) setSelectedAlbumId(albumsRes[0].id);
+                    }
+                }
+            } catch {
+                if (!cancelled) {
+                    setAlbums([]);
+                    setArtists([]);
+                }
+            }
+        };
+        void load();
+        return () => { cancelled = true; };
+    }, [isEditing, content, albumMode]);
+
+
     const togglePlay = () => {
         if (!audioRef.current) return;
         if (isPlaying) audioRef.current.pause();
@@ -91,6 +157,321 @@ export const ContentView: FC = () => {
         return `${minutes}:${seconds.toString().padStart(2, "0")}`;
     }
 
+    const onEditStart = () => setIsEditing(true);
+    const onEditCancel = () => setIsEditing(false);
+
+    const onEditConfirm = async () => {
+        if (!contentId) return;
+        try {
+            const update: {
+                title?: string;
+                imageUrl?: string;
+                genres?: string[];
+                artistIds?: string[];
+                albumId?: string;
+                albumName?: string;
+            } = {
+                title: title.trim(),
+                imageUrl: imageUrl.trim() || undefined,
+                genres,
+                artistIds: selectedArtistIds,
+            };
+            if (albumMode === "existing") {
+                update.albumId = selectedAlbumId || undefined;
+                update.albumName = undefined;
+            } else {
+                update.albumId = undefined;
+                update.albumName = newAlbumName.trim() || undefined;
+            }
+            const updated = await editContent(contentId, update);
+            setContent(updated);
+            setIsEditing(false);
+            alert("Content updated.");
+        } catch (e: unknown) {
+            const msg = e instanceof Error ? e.message : String(e);
+            alert(`Failed to edit content: ${msg}`);
+        }
+    };
+
+    const onDelete = async () => {
+        if (!contentId) return;
+        if (!confirm("Are you sure you want to delete this content? This cannot be undone.")) return;
+        try {
+            await deleteContent(contentId);
+            alert("Content deleted.");
+            navigate("/");
+        } catch (e: unknown) {
+            const msg = e instanceof Error ? e.message : String(e);
+            alert(`Failed to delete content: ${msg}`);
+        }
+    };
+
+    if (isEditing) {
+        return (
+            <div style={{ maxWidth: 900, margin: "24px auto", padding: "0 16px" }}>
+                <div style={{
+                    background: "#dddddd",
+                    border: "1px solid #e5e7eb",
+                    borderRadius: 12,
+                    padding: 20,
+                    boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
+                }}>
+                    <h2 style={{ margin: 0, color: "#223d77"}}>Edit Content</h2>
+                    <p style={{ marginTop: 6, color: "#667085" }}>Update track details, album, artists, and genres.</p>
+
+                    <div style={{ display: "grid", gap: 16 }}>
+                        {/* Title */}
+                        <div style={{ display: "grid", gap: 8 }}>
+                            <label style={{ fontWeight: 600, color: "#636363" }}>Title</label>
+                            <input
+                                style={{
+                                    background: "#f9fafb", border: "1px solid #d1d5db", color: "#636363",
+                                    borderRadius: 8, padding: "10px 12px", outline: "none", fontSize: 14
+                                }}
+                                placeholder="Song title"
+                                value={title}
+                                onChange={(e) => setTitle(e.target.value)}
+                            />
+                        </div>
+
+                        {/* Artwork URL */}
+                        <div style={{ display: "grid", gap: 8 }}>
+                            <label style={{ fontWeight: 600, color: "#636363" }}>Image URL</label>
+                            <input
+                                style={{
+                                    background: "#f9fafb", border: "1px solid #d1d5db", color: "#636363",
+                                    borderRadius: 8, padding: "10px 12px", outline: "none", fontSize: 14
+                                }}
+                                placeholder="https://..."
+                                value={imageUrl}
+                                onChange={(e) => setImageUrl(e.target.value)}
+                            />
+                        </div>
+
+                        {/* Album */}
+                        <div style={{ display: "grid", gap: 8 }}>
+                            <label style={{ fontWeight: 600, color: "#636363" }}>Album</label>
+                            <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+                                <label style={{ display: "inline-flex", alignItems: "center", gap: 8, color: "#6a6a6a" }}>
+                                    <input
+                                        type="radio"
+                                        name="albumMode"
+                                        value="existing"
+                                        checked={albumMode === "existing"}
+                                        onChange={() => setAlbumMode("existing")}
+                                    />
+                                    <span>Existing</span>
+                                </label>
+                                <label style={{ display: "inline-flex", alignItems: "center", gap: 8, color: "#6a6a6a" }}>
+                                    <input
+                                        type="radio"
+                                        name="albumMode"
+                                        value="new"
+                                        checked={albumMode === "new"}
+                                        onChange={() => setAlbumMode("new")}
+                                    />
+                                    <span>Create new</span>
+                                </label>
+                            </div>
+
+                            {albumMode === "existing" ? (
+                                <div style={{
+                                    display: "grid",
+                                    gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
+                                    gap: 15,
+                                    marginTop: 8
+                                }}>
+                                    {albums.map((a) => {
+                                        const selected = selectedAlbumId === a.id;
+                                        return (
+                                            <button
+                                                key={a.id}
+                                                type="button"
+                                                onClick={() => setSelectedAlbumId(a.id)}
+                                                style={{
+                                                    display: "flex",
+                                                    flexDirection: "column",
+                                                    gap: 8,
+                                                    alignItems: "center",
+                                                    padding: 10,
+                                                    border: "1px solid #e5e7eb",
+                                                    borderRadius: 12,
+                                                    cursor: "pointer",
+                                                    background: selected ? "#eef2ff" : "#f6f6f6",
+                                                    borderColor: selected ? "#6880e6" : "#e5e7eb",
+                                                }}
+                                                title={a.name}
+                                            >
+                                                <img
+                                                    src={a.imageUrl || "https://via.placeholder.com/80?text=Album"}
+                                                    alt={a.name}
+                                                    style={{ width: 120, height: 90, borderRadius: 8, objectFit: "cover" }}
+                                                />
+                                                <div style={{ fontSize: 13, fontWeight: 600, textAlign: "center", color: "#808080" }}>
+                                                    {a.name}
+                                                </div>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            ) : (
+                                <input
+                                    style={{
+                                        background: "#f9fafb", border: "1px solid #d1d5db", color: "#636363",
+                                        borderRadius: 8, padding: "10px 12px", outline: "none", fontSize: 14, marginTop: 8
+                                    }}
+                                    placeholder="New album name"
+                                    value={newAlbumName}
+                                    onChange={(e) => setNewAlbumName(e.target.value)}
+                                />
+                            )}
+                        </div>
+
+                        {/* Genres */}
+                        <div style={{ display: "grid", gap: 8 }}>
+                            <label style={{ fontWeight: 600, color: "#636363" }}>Genres</label>
+                            <div style={{ display: "flex", gap: 8 }}>
+                                <input
+                                    style={{
+                                        background: "#f9fafb", border: "1px solid #d1d5db", color: "#636363",
+                                        borderRadius: 8, padding: "10px 12px", outline: "none", fontSize: 14, flex: 1
+                                    }}
+                                    placeholder="Type a genre and click Add"
+                                    value={genreInput}
+                                    onChange={(e) => setGenreInput(e.target.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === "Enter") {
+                                            e.preventDefault();
+                                            addGenre();
+                                        }
+                                    }}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={addGenre}
+                                    style={{
+                                        background: "#f3f4f6",
+                                        color: "#111827",
+                                        border: "1px solid #e5e7eb",
+                                        borderRadius: 8,
+                                        padding: "10px 14px",
+                                        cursor: "pointer",
+                                        fontWeight: 600,
+                                    }}
+                                >
+                                    Add
+                                </button>
+                            </div>
+                            {genres.length > 0 && (
+                                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
+                                    {genres.map((g) => (
+                                        <span
+                                            key={g}
+                                            style={{
+                                                display: "inline-flex",
+                                                alignItems: "center",
+                                                gap: 6,
+                                                color: "#6b7280",
+                                                background: "#f3f4f6",
+                                                border: "1px solid #e5e7eb",
+                                                borderRadius: 15,
+                                                padding: "9px 11px",
+                                                fontSize: 12,
+                                            }}
+                                        >
+                                            {g}
+                                            <button
+                                                type="button"
+                                                onClick={() => removeGenre(g)}
+                                                aria-label={`Remove ${g}`}
+                                                style={{
+                                                    border: "none",
+                                                    background: "transparent",
+                                                    cursor: "pointer",
+                                                    padding: 0,
+                                                    paddingLeft: 4,
+                                                    color: "#6b7280",
+                                                    fontSize: 14,
+                                                    lineHeight: 1,
+                                                }}
+                                            >
+                                                ×
+                                            </button>
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Artists */}
+                        <div style={{ display: "grid", gap: 8 }}>
+                            <label style={{ fontWeight: 600, color: "#636363" }}>Artists</label>
+                            <div style={{ display: "grid", gap: 8, gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))" }}>
+                                {artists.map((ar) => {
+                                    const selected = selectedArtistIds.includes(ar.id);
+                                    return (
+                                        <button
+                                            key={ar.id}
+                                            type="button"
+                                            onClick={() => toggleArtist(ar.id)}
+                                            style={{
+                                                display: "flex",
+                                                justifyContent: "space-between",
+                                                alignItems: "center",
+                                                border: "1px solid #e5e7eb",
+                                                borderRadius: 10,
+                                                padding: "10px 12px",
+                                                background: selected ? "#6880e6" : "#8299f4",
+                                                cursor: "pointer",
+                                            }}
+                                        >
+                                            <span>{ar.name}</span>
+                                            <span style={{ color: "#38538e", fontWeight: 700 }}>{selected ? "✓" : ""}</span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
+                            <button
+                                type="button"
+                                onClick={onEditCancel}
+                                style={{
+                                    background: "#f3f4f6",
+                                    color: "#111827",
+                                    border: "1px solid #e5e7eb",
+                                    borderRadius: 8,
+                                    padding: "10px 14px",
+                                    cursor: "pointer",
+                                    fontWeight: 600,
+                                }}
+                            >
+                                Exit
+                            </button>
+                            <button
+                                type="button"
+                                onClick={onEditConfirm}
+                                style={{
+                                    background: "#10b981",
+                                    color: "#fff",
+                                    border: "none",
+                                    borderRadius: 8,
+                                    padding: "10px 14px",
+                                    cursor: "pointer",
+                                    fontWeight: 600,
+                                }}
+                            >
+                                Confirm
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div>
 
@@ -106,7 +487,7 @@ export const ContentView: FC = () => {
                 justifyContent: "center",
                 alignItems: "center"
                 }}
-                >
+            >
                 {/* Left side - content info */}
                 <div style={{ flex: 1, textAlign: "center" }}>
                     <h2 style={{ margin: "0 0 0.5rem" }}>{content?.title}</h2>
@@ -123,6 +504,39 @@ export const ContentView: FC = () => {
                     <strong>Uploaded:</strong>
                     {content !== null ? new Date(content?.createdAt).toLocaleString() : new Date().toLocaleDateString()}
                     </p>
+
+                    {/* View actions */}
+                    <div style={{ marginTop: 12, display: "flex", justifyContent: "center", gap: 12, flexWrap: "wrap" }}>
+                        <button
+                            type="button"
+                            onClick={onEditStart}
+                            style={{
+                                background: "#10b981",
+                                color: "#fff",
+                                border: "none",
+                                borderRadius: 8,
+                                padding: "0.5rem 1rem",
+                                cursor: "pointer",
+                            }}
+                        >
+                            Edit
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={onDelete}
+                            style={{
+                                background: "#ef4444",
+                                color: "#fff",
+                                border: "none",
+                                borderRadius: 8,
+                                padding: "0.5rem 1rem",
+                                cursor: "pointer",
+                            }}
+                        >
+                            Delete
+                        </button>
+                    </div>
                 </div>
 
                 {/* Right side - image and player */}
