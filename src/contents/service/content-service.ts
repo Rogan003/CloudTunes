@@ -21,6 +21,7 @@ export async function uploadContent(content: UploadContentRequest): Promise<Uplo
     return body as UploadContentResponse;
 }
 
+// will be moved to albums-service later, don't move now
 export async function getAllAlbums(): Promise<AlbumCard[]> {
     const res = await fetch(`${API_BASE_URL}/albums`, {
         method: "GET",
@@ -33,6 +34,7 @@ export async function getAllAlbums(): Promise<AlbumCard[]> {
     return body as AlbumCard[];
 }
 
+// will be moved to artists-service later, don't move now
 export async function getAllArtists(): Promise<ArtistCard[]> {
     const res = await fetch(`${API_BASE_URL}/artists`, {
         method: "GET",
@@ -60,5 +62,30 @@ export async function getContent(contentId: string): Promise<GetContentResponse>
     if (blob) content.fileUrl = URL.createObjectURL(blob);
 
     return content;
+}
+
+export async function editContent(contentId: string, update: Partial<UploadContentRequest>): Promise<GetContentResponse> {
+    const response = await fetch(`${API_BASE_URL}/contents/${contentId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(update),
+    });
+    const body = await response.json();
+    if (!response.ok) {
+        throw new Error(body?.message || `Failed to edit content (${response.status})`);
+    }
+    return body as GetContentResponse;
+}
+
+export async function deleteContent(contentId: string): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/contents/${contentId}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+    });
+    if (!response.ok) {
+        let body: any;
+        try { body = await response.json(); } catch {}
+        throw new Error(body?.message || `Failed to delete content (${response.status})`);
+    }
 }
 

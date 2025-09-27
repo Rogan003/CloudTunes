@@ -235,6 +235,17 @@ export class AppStack extends cdk.Stack {
             "getContent",
             commonLambdaProps("lib/lambdas/get-content.ts")
         );
+        const editContentLambda = new lambdaNode.NodejsFunction(
+            this,
+            "editContent",
+            commonLambdaProps("lib/lambdas/edit-content.ts", 10)
+        );
+        const deleteContentLambda = new lambdaNode.NodejsFunction(
+            this,
+            "deleteContent",
+            commonLambdaProps("lib/lambdas/delete-content.ts")
+        );
+
         const getContentByArtistLambda = new lambdaNode.NodejsFunction(
             this,
             "getContentByArtist",
@@ -255,11 +266,22 @@ export class AppStack extends cdk.Stack {
         contentArtistMap.grantReadWriteData(uploadContentLambda);
         contentBucket.grantReadWrite(uploadContentLambda);
 
+        contentTable.grantReadWriteData(editContentLambda);
+        genresTable.grantWriteData(editContentLambda);
+        contentArtistMap.grantReadWriteData(editContentLambda);
+        contentBucket.grantReadWrite(editContentLambda);
+
+        contentTable.grantReadWriteData(deleteContentLambda);
+        contentArtistMap.grantReadWriteData(deleteContentLambda);
+        contentBucket.grantReadWrite(deleteContentLambda);
+
         contentTable.grantReadData(getContentLambda);
         contentBucket.grantRead(getContentLambda);
+
         contentTable.grantReadData(getContentByAlbumLambda);
         contentTable.grantReadData(getContentByGenreLambda);
         genresTable.grantReadData(getContentByGenreLambda);
+
         contentArtistMap.grantReadData(getContentByArtistLambda);
         contentTable.grantReadData(getContentByArtistLambda);
 
@@ -367,11 +389,35 @@ export class AppStack extends cdk.Stack {
 
         // GET /contents/{contentId}
         const singleContent = contents.addResource("{contentId}");
-        addCorsOptions(singleContent, ["GET"]);
+        addCorsOptions(singleContent, ["GET", "PUT", "DELETE"]);
         addMethodWithLambda(
             singleContent,
             "GET",
             getContentLambda,
+            requestTemplate().path("contentId").build()
+        );
+        // PUT /contents/{contentId}
+        const editContentTmpl = requestTemplate()
+            .path("contentId")
+            .body("title")
+            .body("imageUrl")
+            .body("albumId")
+            .body("albumName")
+            .body("genres")
+            .body("artistIds")
+            .body("fileBase64")
+            .build();
+        addMethodWithLambda(
+            singleContent,
+            "PUT",
+            editContentLambda,
+            editContentTmpl
+        );
+        // DELETE /contents/{contentId}
+        addMethodWithLambda(
+            singleContent,
+            "DELETE",
+            deleteContentLambda,
             requestTemplate().path("contentId").build()
         );
 
