@@ -10,6 +10,7 @@ export const ContentView: FC = () => {
     const [duration, setDuration] = useState(0);
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const [content, setContent] = useState<GetContentResponse | null>(null);
+    const [audioFileUrl, setAudioFileUrl] = useState<string | null>(null);
     const [isPlaying, setIsPlaying] = useState(false);
     const [progress, setProgress] = useState(0);
     const [isDownloaded, setIsDownloaded] = useState(false);
@@ -18,12 +19,15 @@ export const ContentView: FC = () => {
         const fetchContent = async () => {
             try {
                 if (!contentId) return;
-                const content: GetContentResponse = await getContent(contentId);
-                setContent(content);
 
                 const cached = await getFromCache(contentId);
                 setIsDownloaded(!!cached);
+                if (cached) setAudioFileUrl(URL.createObjectURL(cached));
 
+                const content: GetContentResponse = await getContent(contentId);
+                setContent(content);
+                if (!audioFileUrl) setAudioFileUrl(content.fileUrl);
+            
             } catch (err: any) {
                 alert("An error occurred while fetching content: " + err.message);
             }
@@ -137,10 +141,10 @@ export const ContentView: FC = () => {
                     )}
 
                     {/* Audio player */}
-                    {content?.fileUrl && (
+                    {audioFileUrl && (
                         <audio
                             ref={audioRef}
-                            src={content.fileUrl}
+                            src={audioFileUrl}
                             onLoadedMetadata={handleLoadedMetadata}
                             onTimeUpdate={handleTimeUpdate}
                             onEnded={() => setIsPlaying(false)}
