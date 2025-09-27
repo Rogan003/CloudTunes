@@ -7,6 +7,7 @@ import * as iam from "aws-cdk-lib/aws-iam";
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as sqs from "aws-cdk-lib/aws-sqs";
+import * as eventSources from "aws-cdk-lib/aws-lambda-event-sources";
 import { RestApi } from 'aws-cdk-lib/aws-apigateway';
 import { addCorsOptions, addMethodWithLambda } from '../utils/methodUtils';
 import { requestTemplate } from '../utils/requestTemplate';
@@ -171,6 +172,7 @@ export class AppStack extends cdk.Stack {
                 RATING_TABLE: ratingTable.tableName,
                 SUBSCRIPTION_TABLE: subscriptionTable.tableName,
                 USER_POOL_ID: userPool.userPoolId,
+                SUBSCRIPTION_QUEUE_URL: subscriptionNotificationsQueue.queueUrl
             },
         });
 
@@ -503,6 +505,26 @@ export class AppStack extends cdk.Stack {
                 queue: dlq,
             },
         });
+
+        const emailNotificationLambda = new lambdaNode.NodejsFunction(
+            this,
+            "emailNotificationLambda",
+            commonLambdaProps("lib/lambdas/send-notification-email.ts")
+        );
+        subscriptionNotificationsQueue.grantConsumeMessages(emailNotificationLambda);
+
+        emailNotificationLambda.addToRolePolicy(
+            new iam.PolicyStatement({
+                actions: ["ses:SendEmail", "ses:SendRawEmail"],
+                resources: ["*"],
+            })
+        );
+
+        emailNotificationLambda.addEventSource(
+            new eventSources.SqsEventSource(subscriptionNotificationsQueue, {
+                batchSize: 1,
+            })
+        );
 
         // Outputs
         new cdk.CfnOutput(this, "ContentTableName", { value: contentTable.tableName });

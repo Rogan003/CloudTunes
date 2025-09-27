@@ -1,15 +1,19 @@
-import { DynamoDBClient, PutItemCommand } from "@aws-sdk/client-dynamodb";
+import {DynamoDBClient, PutItemCommand, QueryCommand} from "@aws-sdk/client-dynamodb";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
 import { Handler} from "aws-lambda";
 import { v4 as uuidv4 } from "uuid";
 import {Content} from "../models/content-models";
 
 const client = new DynamoDBClient({});
 const s3 = new S3Client({});
+const sqs = new SQSClient({});
 const contentTable = process.env.CONTENT_TABLE!;
 const contentArtistTable = process.env.CONTENT_ARTIST_TABLE!;
 const genresTable = process.env.GENRES_TABLE!;
 const contentBucket = process.env.CONTENT_BUCKET!;
+const subscriptionTable = process.env.SUBSCRIPTION_TABLE!;
+const subscriptionQueueUrl = process.env.SUBSCRIPTION_QUEUE_URL!;
 
 async function detectFile(buffer: Buffer) {
     const { fileTypeFromBuffer } = await import("file-type");
@@ -157,6 +161,69 @@ export const handler: Handler<Content> = async (event: any) => {
                     },
                 }));
             }
+        }
+
+        const userEmailsForNotification: Set<string> = new Set();
+
+        for (const genre of genres) {
+            const { Items } = await client.send(new QueryCommand({
+                TableName: subscriptionTable,
+                IndexName: "SubscriptionsForType",
+                KeyConditionExpression: `SK = :id`,
+                ExpressionAttributeValues: { ":id": { S: `GENRE#${genre}` } }
+            }));
+
+            if (!Items) {
+                continue
+            }
+
+            for (const item of Items) {
+                const userEmail = item.userEmail.S!
+                userEmailsForNotification.add(userEmail);
+            }
+        }
+
+        for (const artistId of artistIds) {
+            const { Items } = await client.send(new QueryCommand({
+                TableName: subscriptionTable,
+                IndexName: "SubscriptionsForType",
+                KeyConditionExpression: `SK = :id`,
+                ExpressionAttributeValues: { ":id": { S: `ARTIST#${artistId}` } }
+            }));
+
+            if (!Items) {
+                continue
+            }
+
+            for (const item of Items) {
+                const userEmail = item.userEmail.S!
+                userEmailsForNotification.add(userEmail);
+            }
+        }
+
+        const { Items } = await client.send(new QueryCommand({
+            TableName: subscriptionTable,
+            IndexName: "SubscriptionsForType",
+            KeyConditionExpression: `SK = :id`,
+            ExpressionAttributeValues: { ":id": { S: `ALBUM#${albumId}` } }
+        }));
+
+        if (Items) {
+            for (const item of Items) {
+                const userEmail = item.userEmail.S!
+                userEmailsForNotification.add(userEmail);
+            }
+        }
+
+        for (const userEmail of userEmailsForNotification) {
+            const messageBody = JSON.stringify({ title, email: userEmail });
+
+            const command = new SendMessageCommand({
+                QueueUrl: subscriptionQueueUrl,
+                MessageBody: messageBody,
+            });
+
+            await sqs.send(command);
         }
 
         return {
