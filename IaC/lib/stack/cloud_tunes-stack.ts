@@ -6,6 +6,7 @@ import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as iam from "aws-cdk-lib/aws-iam";
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import * as s3 from 'aws-cdk-lib/aws-s3';
+import * as sqs from "aws-cdk-lib/aws-sqs";
 import { RestApi } from 'aws-cdk-lib/aws-apigateway';
 import { addCorsOptions, addMethodWithLambda } from '../utils/methodUtils';
 import { requestTemplate } from '../utils/requestTemplate';
@@ -131,10 +132,17 @@ export class AppStack extends cdk.Stack {
         // Subscription Table
         const subscriptionTable = new dynamodb.Table(this, "Subscriptions", {
             tableName: "Subscriptions",
-            partitionKey: { name: "userId", type: dynamodb.AttributeType.STRING },
+            partitionKey: { name: "userEmail", type: dynamodb.AttributeType.STRING },
             sortKey: { name: "SK", type: dynamodb.AttributeType.STRING },
             billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
             removalPolicy: cdk.RemovalPolicy.DESTROY,
+        });
+
+        subscriptionTable.addGlobalSecondaryIndex({
+            indexName: "SubscriptionsForType",
+            partitionKey: { name: "SK", type: dynamodb.AttributeType.STRING },
+            sortKey: { name: "userEmail", type: dynamodb.AttributeType.STRING },
+            projectionType: dynamodb.ProjectionType.ALL,
         });
 
         const contentBucket = new s3.Bucket(this, "ContentBucket", {
@@ -447,43 +455,54 @@ export class AppStack extends cdk.Stack {
             subs,
             "POST",
             subscribeLambda,
-            requestTemplate().body("userId").body("type").body("typeId").build(),
+            requestTemplate().body("type").body("typeId").build(),
             api.addModel("SubscriptionModel", subscriptionModelOptions)
         );
 
-        // DELETE /subscriptions/{userId}/{type}/{id}
-        const unsubscribe = subs.addResource("{userId}")
-            .addResource("{type}")
+        // DELETE /subscriptions/{type}/{id}
+        const unsubscribe = subs.addResource("{type}")
             .addResource("{typeId}");
         addCorsOptions(unsubscribe, ["DELETE"]);
         addMethodWithLambda(
             unsubscribe,
             "DELETE",
             unsubscribeLambda,
-            requestTemplate().path("userId").body("type").body("typeId").build()
+            requestTemplate().path("type").path("typeId").build()
         );
 
-        // GET /subscriptions/{userId}/{type}/{id}
-        const getIsSubscribed = subs.addResource("{userId}")
-            .addResource("{type}")
+        // GET /subscriptions/{type}/{id}
+        const getIsSubscribed = subs.addResource("{type}")
             .addResource("{typeId}");
         addCorsOptions(unsubscribe, ["GET"]);
         addMethodWithLambda(
             getIsSubscribed,
             "GET",
             getIsSubscribedLambda,
-            requestTemplate().path("userId").body("type").body("typeId").build()
+            requestTemplate().path("type").path("typeId").build()
         );
 
-        // GET /subscriptions/{userId}
-        const subscriptionsForUser = subs.addResource("{userId}");
-        addCorsOptions(subscriptionsForUser, ["GET"]);
+        // GET /subscriptions/
+        addCorsOptions(subs, ["GET"]);
         addMethodWithLambda(
-            subscriptionsForUser,
+            subs,
             "GET",
             getSubscriptionsForUserLambda,
-            requestTemplate().path("userId").build()
         );
+
+        const dlq = new sqs.Queue(this, "SubscriptionNotificationsDLQ", {
+            queueName: "subscription-notifications-dlq",
+            retentionPeriod: cdk.Duration.days(14),
+        });
+
+        const subscriptionNotificationsQueue = new sqs.Queue(this, "SubscriptionNotificationsQueue", {
+            queueName: "subscription-notifications-queue",
+            visibilityTimeout: cdk.Duration.seconds(60),
+            retentionPeriod: cdk.Duration.days(1),
+            deadLetterQueue: {
+                maxReceiveCount: 5,
+                queue: dlq,
+            },
+        });
 
         // Outputs
         new cdk.CfnOutput(this, "ContentTableName", { value: contentTable.tableName });
@@ -494,5 +513,7 @@ export class AppStack extends cdk.Stack {
         new cdk.CfnOutput(this, "SubscriptionTableName", { value: subscriptionTable.tableName });
         new cdk.CfnOutput(this, "ContentBucketName", { value: contentBucket.bucketName });
         new cdk.CfnOutput(this, "ApiUrl", { value: api.url });
+        new cdk.CfnOutput(this, "MailTasksQueueUrl", { value: subscriptionNotificationsQueue.queueUrl });
+        new cdk.CfnOutput(this, "MailTasksDLQUrl", { value: dlq.queueUrl });
     }
 }

@@ -6,9 +6,6 @@ import {BackButton, NegativeButton, PositiveButton} from "../../shared/component
 import { Grid } from "../../shared/components/Grid";
 import type {ContentCard} from "../../shared/models/content-models.ts";
 import {getSongsForArtist} from "../services/content-service.ts";
-import {TokenStorage} from "../../users/services/user-token-storage-service.ts";
-import {jwtDecode} from "jwt-decode";
-import type {DecodedIdToken} from "../../users/models/aws-calls.ts";
 import {getIsSubscribed, subscribe, unsubscribe} from "../services/subscription-service.ts";
 
 export const ArtistSongsPage: React.FC = () => {
@@ -19,17 +16,9 @@ export const ArtistSongsPage: React.FC = () => {
   const pageSize = 12;
   const [artistSongs, setArtistSongs] = useState<ContentCard[]>([]);
   const [isSubscribed, setIsSubscribed] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null);
 
     useEffect(() => {
-        const token = TokenStorage.getIdToken();
-        if (!token) {
-            throw new Error("Not authenticated");
-        }
-
-        const decoded = jwtDecode<DecodedIdToken>(token);
-        setUserId(decoded.key);
-        if (!userId || !artistId) return;
+        if (!artistId) return;
 
         const fetchSongsForArtist = async () => {
             try {
@@ -43,23 +32,23 @@ export const ArtistSongsPage: React.FC = () => {
         };
 
         fetchSongsForArtist();
-        getIsSubscribed(userId, "artist", artistId).then(setIsSubscribed);
+        getIsSubscribed("artist", artistId).then(setIsSubscribed);
     }, []);
 
   const pageItems = useMemo(() => paginate(artistSongs, page, pageSize), [artistSongs, page]);
 
     const subscribeArtist = () => {
-        if (!userId || !artistId) return;
+        if (!artistId) return;
 
-        subscribe(userId, "artist", artistId).then(() => {
+        subscribe("artist", artistId).then(() => {
             setIsSubscribed(true);
         });
     }
 
     const unsubscribeArtist = () => {
-        if (!userId || !artistId) return;
+        if (!artistId) return;
 
-        unsubscribe(userId, "artist", artistId).then(() => {
+        unsubscribe("artist", artistId).then(() => {
             setIsSubscribed(false);
         });
     }

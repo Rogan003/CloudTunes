@@ -1,6 +1,8 @@
 import {DynamoDBClient, GetItemCommand, QueryCommand} from "@aws-sdk/client-dynamodb";
 import {Handler} from "aws-lambda";
 import {SubscriptionCard} from "../models/subscriptions-model";
+import jwt from "jsonwebtoken";
+import {JwtPayload} from "jwt-decode";
 
 const client = new DynamoDBClient({});
 const subscriptionTable = process.env.SUBSCRIPTION_TABLE!;
@@ -10,12 +12,18 @@ const contentTable = process.env.CONTENT_TABLE!;
 
 export const handler: Handler<SubscriptionCard[]> = async (event: any) => {
     try {
-        const userId = event.pathParameters.userId;
+        const token = event.headers.Authorization?.split(" ")[1];
+        if (!token) throw new Error("No token provided");
+
+        const decoded = jwt.decode(token) as JwtPayload | null;
+        if (!decoded) throw new Error("Invalid token");
+        const email = (decoded as any)["email"];
+
         const { Items } = await client.send(
             new QueryCommand({
                 TableName: subscriptionTable,
-                KeyConditionExpression: "userId = :pk",
-                ExpressionAttributeValues: { ":pk": { S: `${userId}` } },
+                KeyConditionExpression: "userEmail = :pk",
+                ExpressionAttributeValues: { ":pk": { S: `${email}` } },
                 ProjectionExpression: "SK",
             })
         );

@@ -13,6 +13,7 @@
   "devDependencies": {
     "@types/aws-lambda": "^8.10.152",
     "@types/jest": "^29.5.14",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "22.7.9",
     "aws-cdk": "2.1027.0",
     "esbuild": "^0.19.12",
@@ -28,6 +29,7 @@
     "@aws-sdk/s3-request-presigner": "^3.896.0",
     "aws-cdk-lib": "^2.211.0",
     "constructs": "^10.4.2",
-    "file-type": "^21.0.0"
+    "file-type": "^21.0.0",
+    "jsonwebtoken": "^9.0.2"
   }
 }

@@ -8,9 +8,6 @@ import { Section } from "../../shared/components/Section";
 import type {AlbumCard, ArtistCard} from "../models/music-models.ts";
 import {getAlbumsForGenre, getArtistsForGenre, getGenres} from "../services/genres-service.ts";
 import {getIsSubscribed, subscribe, unsubscribe} from "../services/subscription-service.ts";
-import {TokenStorage} from "../../users/services/user-token-storage-service.ts";
-import {jwtDecode} from "jwt-decode";
-import type {DecodedIdToken} from "../../users/models/aws-calls.ts";
 
 export const DiscoverPage: React.FC = () => {
   const navigate = useNavigate();
@@ -21,18 +18,9 @@ export const DiscoverPage: React.FC = () => {
   const [albumPage, setAlbumPage] = useState(1);
   const [artistPage, setArtistPage] = useState(1);
   const [isSubscribed, setIsSubscribed] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null);
   const pageSize = 6;
 
   useEffect(() => {
-      const token = TokenStorage.getIdToken();
-      if (!token) {
-          throw new Error("Not authenticated");
-      }
-
-      const decoded = jwtDecode<DecodedIdToken>(token);
-      setUserId(decoded.key);
-
       const fetchGenres = async () => {
           try {
               const genres: string[] = await getGenres();
@@ -51,7 +39,7 @@ export const DiscoverPage: React.FC = () => {
   }, []);
 
   const loadForGenre = async () => {
-      if (!userId || !selectedGenre) return;
+      if (!selectedGenre) return;
 
       let albums: AlbumCard[] = [];
       let artists: ArtistCard[] = [];
@@ -71,7 +59,7 @@ export const DiscoverPage: React.FC = () => {
 
       setAlbums(albums);
       setArtists(artists);
-      getIsSubscribed(userId, "genre", selectedGenre).then(setIsSubscribed);
+      getIsSubscribed("genre", selectedGenre).then(setIsSubscribed);
   }
 
   useEffect(() => {
@@ -82,17 +70,17 @@ export const DiscoverPage: React.FC = () => {
   const artistPageItems = useMemo(() => paginate(artists, artistPage, pageSize), [artists, artistPage]);
 
   const subscribeGenre = () => {
-      if (!userId || !selectedGenre) return;
+      if (!selectedGenre) return;
 
-      subscribe(userId, "genre", selectedGenre).then(() => {
+      subscribe("genre", selectedGenre).then(() => {
           setIsSubscribed(true);
       });
   }
 
   const unsubscribeGenre = () => {
-      if (!userId || !selectedGenre) return;
+      if (!selectedGenre) return;
 
-      unsubscribe(userId, "genre", selectedGenre).then(() => {
+      unsubscribe("genre", selectedGenre).then(() => {
           setIsSubscribed(false);
       });
   }

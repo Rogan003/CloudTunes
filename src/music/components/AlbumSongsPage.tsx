@@ -6,9 +6,6 @@ import {BackButton, NegativeButton, PositiveButton} from "../../shared/component
 import { Grid } from "../../shared/components/Grid";
 import {getSongsForAlbum} from "../services/content-service.ts";
 import type {ContentCard} from "../../shared/models/content-models.ts";
-import {TokenStorage} from "../../users/services/user-token-storage-service.ts";
-import {jwtDecode} from "jwt-decode";
-import type {DecodedIdToken} from "../../users/models/aws-calls.ts";
 import {getIsSubscribed, subscribe, unsubscribe} from "../services/subscription-service.ts";
 
 export const AlbumSongsPage: React.FC = () => {
@@ -19,17 +16,9 @@ export const AlbumSongsPage: React.FC = () => {
   const pageSize = 12;
   const [albumSongs, setAlbumSongs] = useState<ContentCard[]>([]);
   const [isSubscribed, setIsSubscribed] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
-      const token = TokenStorage.getIdToken();
-      if (!token) {
-          throw new Error("Not authenticated");
-      }
-
-      const decoded = jwtDecode<DecodedIdToken>(token);
-      setUserId(decoded.key);
-      if (!userId || !albumId) return;
+      if (!albumId) return;
 
       const fetchSongsForAlbum = async () => {
           try {
@@ -43,23 +32,23 @@ export const AlbumSongsPage: React.FC = () => {
       };
 
       fetchSongsForAlbum();
-      getIsSubscribed(userId, "album", albumId).then(setIsSubscribed);
+      getIsSubscribed("album", albumId).then(setIsSubscribed);
       }, []);
 
   const pageItems = useMemo(() => paginate(albumSongs, page, pageSize), [albumSongs, page]);
 
     const subscribeAlbum = () => {
-        if (!userId || !albumId) return;
+        if (!albumId) return;
 
-        subscribe(userId, "album", albumId).then(() => {
+        subscribe("album", albumId).then(() => {
             setIsSubscribed(true);
         });
     }
 
     const unsubscribeAlbum = () => {
-        if (!userId || !albumId) return;
+        if (!albumId) return;
 
-        unsubscribe(userId, "album", albumId).then(() => {
+        unsubscribe("album", albumId).then(() => {
             setIsSubscribed(false);
         });
     }

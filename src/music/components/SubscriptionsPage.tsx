@@ -8,9 +8,6 @@ import { Section } from "../../shared/components/Section";
 import {Empty} from "../../shared/components/Empty.tsx";
 import type {AlbumCard, ArtistCard, Genre} from "../models/music-models.ts";
 import {getSubscriptionsForUser, unsubscribe} from "../services/subscription-service.ts";
-import {TokenStorage} from "../../users/services/user-token-storage-service.ts";
-import type {DecodedIdToken} from "../../users/models/aws-calls.ts";
-import {jwtDecode} from "jwt-decode";
 
 export const SubscriptionsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -20,19 +17,10 @@ export const SubscriptionsPage: React.FC = () => {
   const [artistPage, setArtistPage] = useState(1);
   const [albumPage, setAlbumPage] = useState(1);
   const [genrePage, setGenrePage] = useState(1);
-  const [userId, setUserId] = useState<string | null>(null);
   const pageSize = 6;
 
   useEffect(() => {
-      const token = TokenStorage.getIdToken();
-      if (!token) {
-          throw new Error("Not authenticated");
-      }
-
-      const decoded = jwtDecode<DecodedIdToken>(token);
-      setUserId(decoded.key);
-
-      getSubscriptionsForUser(decoded.key).then((subscriptions) => {
+      getSubscriptionsForUser().then((subscriptions) => {
           subscriptions.forEach((subscription) => {
               if (subscription.type === "artist") {
                   setArtists([...artists, {
@@ -59,9 +47,7 @@ export const SubscriptionsPage: React.FC = () => {
   const genreItems = useMemo(() => paginate(genres, genrePage, pageSize), [genres, genrePage]);
 
   const onUnsub = (type: string, id: string) => {
-      if (userId == null) return;
-
-      unsubscribe(userId, type, id).then(() => {
+      unsubscribe(type, id).then(() => {
           if (type === "artists") {
               setArtists(artists.filter(a => a.id !== id));
           } else if (type === "albums") {

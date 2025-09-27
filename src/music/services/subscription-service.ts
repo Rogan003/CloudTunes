@@ -2,8 +2,8 @@ import type {SubscriptionCard} from "../models/music-models.ts";
 
 export const API_BASE_URL = "https://zoqpwwqkpd.execute-api.eu-central-1.amazonaws.com/prod";
 
-export async function getSubscriptionsForUser(userId: string): Promise<SubscriptionCard[]> {
-    const response = await fetch(`${API_BASE_URL}/subscriptions/` + userId, {
+export async function getSubscriptionsForUser(): Promise<SubscriptionCard[]> {
+    const response = await fetch(`${API_BASE_URL}/subscriptions`, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
     });
@@ -17,12 +17,11 @@ export async function getSubscriptionsForUser(userId: string): Promise<Subscript
     return body as SubscriptionCard[];
 }
 
-export async function subscribe(userId: string, type: string, id: string): Promise<any> {
+export async function subscribe(type: string, id: string): Promise<any> {
     const response = await fetch(`${API_BASE_URL}/subscriptions/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-            userId,
             type,
             typeId: id
         }),
@@ -37,8 +36,8 @@ export async function subscribe(userId: string, type: string, id: string): Promi
     return body;
 }
 
-export async function unsubscribe(userId: string, type: string, id: string): Promise<string> {
-    const response = await fetch(`${API_BASE_URL}/subscriptions/` + userId + "/" + type + "/" + id, {
+export async function unsubscribe(type: string, id: string): Promise<string> {
+    const response = await fetch(`${API_BASE_URL}/subscriptions/` + type + "/" + id, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
     });
@@ -52,8 +51,8 @@ export async function unsubscribe(userId: string, type: string, id: string): Pro
     return body;
 }
 
-export async function getIsSubscribed(userId: string, type: string, id: string): Promise<boolean> {
-    const response = await fetch(`${API_BASE_URL}/subscriptions/` + userId + "/" + type + "/" + id, {
+export async function getIsSubscribed(type: string, id: string): Promise<boolean> {
+    const response = await fetch(`${API_BASE_URL}/subscriptions/` + type + "/" + id, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
     });

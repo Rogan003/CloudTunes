@@ -1,13 +1,21 @@
 import {DeleteItemCommand, DynamoDBClient} from "@aws-sdk/client-dynamodb";
 import { Handler } from "aws-lambda";
 import {Subscription} from "aws-cdk-lib/aws-sns";
+import jwt from "jsonwebtoken";
+import {JwtPayload} from "jwt-decode";
 
 const client = new DynamoDBClient({});
 const subscriptionTable = process.env.SUBSCRIPTION_TABLE!;
 
 export const handler: Handler<Subscription> = async (event: any) => {
     try {
-        const userId = event.pathParameters.userId;
+        const token = event.headers.Authorization?.split(" ")[1];
+        if (!token) throw new Error("No token provided");
+
+        const decoded = jwt.decode(token) as JwtPayload | null;
+        if (!decoded) throw new Error("Invalid token");
+        const email = (decoded as any)["email"];
+
         const type = event.pathParameters.type;
         const typeId = event.pathParameters.typeId;
 
@@ -16,7 +24,7 @@ export const handler: Handler<Subscription> = async (event: any) => {
         await client.send(new DeleteItemCommand({
             TableName: subscriptionTable,
             Key: {
-                userId: { S: userId },
+                userEmail: { S: email },
                 SK: { S: SK },
             },
         }));
