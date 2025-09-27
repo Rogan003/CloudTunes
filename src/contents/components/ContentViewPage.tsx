@@ -16,7 +16,7 @@ export const ContentView: FC = () => {
     const [progress, setProgress] = useState(0);
     const [isDownloaded, setIsDownloaded] = useState(false);
 
-    // Edit mode state (mirrors UploadContent UI)
+    // ----- Edit Content part:
     const [isEditing, setIsEditing] = useState(false);
     const [title, setTitle] = useState<string>("");
     const [imageUrl, setImageUrl] = useState<string>("");
@@ -36,7 +36,28 @@ export const ContentView: FC = () => {
         setGenreInput("");
     };
     const removeGenre = (g: string) => setGenres((prev) => prev.filter((x) => x !== g));
+    const [file, setFile] = useState<File | null>(null);
+    const [fileBase64, setFileBase64] = useState<string>("");
+    const [fileInfo, setFileInfo] = useState<{ name?: string; type?: string; size?: number }>({});
+    const onFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+        const f = e.target.files?.[0] || null;
+        setFile(f || null);
+        if (!f) {
+            setFileBase64("");
+            setFileInfo({});
+            return;
+        }
+        setFileInfo({ name: f.name, type: f.type, size: f.size });
+        const reader = new FileReader();
+        reader.onload = () => {
+            const result = reader.result as string;
+            const base64 = result.split(",")[1] || "";
+            setFileBase64(base64);
+        };
+        reader.readAsDataURL(f);
+    };
 
+    // ----- View Content part:
     useEffect(() => {
         const fetchContent = async () => {
             try {
@@ -88,10 +109,11 @@ export const ContentView: FC = () => {
         }
     };
 
+    // ----- Edit Content part:
     useEffect(() => {
         if (!isEditing || !content) return;
 
-        // Prefill from current content
+        // load all current data
         setTitle(content.title ?? "");
         setImageUrl(content.imageUrl ?? "");
         setGenres(Array.isArray(content.genres) ? content.genres.slice() : []);
@@ -106,7 +128,7 @@ export const ContentView: FC = () => {
             setNewAlbumName(content.albumName ?? "");
         }
 
-        // Load selectable albums and artists
+        // load albums and artists to select
         let cancelled = false;
         const load = async () => {
             try {
@@ -114,7 +136,6 @@ export const ContentView: FC = () => {
                 if (!cancelled) {
                     setAlbums(albumsRes);
                     setArtists(artistsRes);
-                    // If existing album no longer present, fall back to first
                     if (albumMode === "existing") {
                         const exists = albumsRes.some(a => a.id === (content.albumId ?? ""));
                         if (!exists && albumsRes.length > 0) setSelectedAlbumId(albumsRes[0].id);
@@ -131,7 +152,7 @@ export const ContentView: FC = () => {
         return () => { cancelled = true; };
     }, [isEditing, content, albumMode]);
 
-
+    // ----- View Content part:
     const togglePlay = () => {
         if (!audioRef.current) return;
         if (isPlaying) audioRef.current.pause();
@@ -157,6 +178,7 @@ export const ContentView: FC = () => {
         return `${minutes}:${seconds.toString().padStart(2, "0")}`;
     }
 
+    // ----- Edit Content part:
     const onEditStart = () => setIsEditing(true);
     const onEditCancel = () => setIsEditing(false);
 
@@ -166,10 +188,11 @@ export const ContentView: FC = () => {
             const update: {
                 title?: string;
                 imageUrl?: string;
-                genres?: string[];
-                artistIds?: string[];
                 albumId?: string;
                 albumName?: string;
+                genres?: string[];
+                artistIds?: string[];
+                fileBase64?: string,
             } = {
                 title: title.trim(),
                 imageUrl: imageUrl.trim() || undefined,
@@ -183,6 +206,10 @@ export const ContentView: FC = () => {
                 update.albumId = undefined;
                 update.albumName = newAlbumName.trim() || undefined;
             }
+            if (fileBase64) {
+                update.fileBase64 = fileBase64;
+            }
+
             const updated = await editContent(contentId, update);
             setContent(updated);
             setIsEditing(false);
@@ -303,7 +330,7 @@ export const ContentView: FC = () => {
                                                 title={a.name}
                                             >
                                                 <img
-                                                    src={a.imageUrl || "https://via.placeholder.com/80?text=Album"}
+                                                    src={a.imageUrl || "https://media.istockphoto.com/id/481475560/vector/vinyl-record-template.jpg?s=612x612&w=0&k=20&c=fZgBryspxNnRn8qMa1mEquff_T6wENAY1HXMtNEMyh4="}
                                                     alt={a.name}
                                                     style={{ width: 120, height: 90, borderRadius: 8, objectFit: "cover" }}
                                                 />
@@ -433,6 +460,22 @@ export const ContentView: FC = () => {
                             </div>
                         </div>
 
+                        {/* File (optional replace) */}
+                        <div style={styles.field}>
+                            <label style={styles.label}>Replace Audio File</label>
+                            <input style={styles.input} type="file" accept="audio/*" onChange={onFileChange} />
+                            {file && (
+                                <div style={styles.help}>
+                                    Selected: {fileInfo.name} ({Math.round((fileInfo.size || 0) / 1024)} KB) — {fileInfo.type || "unknown"}
+                                </div>
+                            )}
+                            {!file && content?.fileUrl && (
+                                <div style={styles.help}>
+                                    Current file: <a href={content.fileUrl} target="_blank" rel="noreferrer">listen</a>
+                                </div>
+                            )}
+                        </div>
+
                         {/* Actions */}
                         <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
                             <button
@@ -472,6 +515,7 @@ export const ContentView: FC = () => {
         );
     }
 
+    // ----- View Content part:
     return (
         <div>
 
@@ -546,10 +590,10 @@ export const ContentView: FC = () => {
                             src={content.imageUrl}
                             alt={content.title}
                             style={{
-                            maxWidth: "220px",
-                            width: "100%",
-                            borderRadius: 12,
-                            marginBottom: "1rem",
+                                maxWidth: "220px",
+                                width: "100%",
+                                borderRadius: 12,
+                                marginBottom: "1rem",
                             }}
                         />
                     )}
@@ -597,4 +641,19 @@ export const ContentView: FC = () => {
             </div>
         </div>
     );
+};
+
+const styles: Record<string, any> = {
+    field: { display: "grid", gap: 8 },
+    label: { fontWeight: 600, color: "#636363" },
+    input: {
+        background: "#f9fafb",
+        border: "1px solid #d1d5db",
+        color: "#636363",
+        borderRadius: 8,
+        padding: "10px 12px",
+        outline: "none",
+        fontSize: 14,
+    },
+    help: { marginTop: 6, color: "#6b7280", fontSize: 12 },
 };
