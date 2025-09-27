@@ -62,3 +62,28 @@ export async function getContent(contentId: string): Promise<GetContentResponse>
     return content;
 }
 
+export async function editContent(contentId: string, update: Partial<UploadContentRequest>): Promise<GetContentResponse> {
+    const response = await fetch(`${API_BASE_URL}/contents/${contentId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(update),
+    });
+    const body = await response.json();
+    if (!response.ok) {
+        throw new Error(body?.message || `Failed to edit content (${response.status})`);
+    }
+    return body as GetContentResponse;
+}
+
+export async function deleteContent(contentId: string): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/contents/${contentId}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+    });
+    if (!response.ok) {
+        let body: any;
+        try { body = await response.json(); } catch {}
+        throw new Error(body?.message || `Failed to delete content (${response.status})`);
+    }
+}
+
