@@ -27,7 +27,6 @@ export function addMethodWithLambda(
         {
           statusCode: "201",
           responseParameters: { [ALLOW_ORIGIN_HEADER]: "'*'" },
-          selectionPattern: "2\\d\\d",
         },
         {
           statusCode: "400",
