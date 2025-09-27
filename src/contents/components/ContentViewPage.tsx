@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState, type ChangeEvent, type FC } from "react";
-import {useNavigate, useParams} from "react-router-dom";
-import {deleteContent, editContent, getAllAlbums, getAllArtists, getContent} from "../service/content-service";
+import { useNavigate, useParams } from "react-router-dom";
+import {deleteContent, editContent, getAllAlbums, getAllArtists, getContent, getRatingByUser, rateContent} from "../service/content-service";
 import type { GetContentResponse } from "../models/aws-calls";
 import { getFromCache, removeFromCache, saveToCache } from "../service/cache-service";
-
 
 export const ContentView: FC = () => {
     const { contentId } = useParams();
@@ -28,8 +27,7 @@ export const ContentView: FC = () => {
     const [selectedArtistIds, setSelectedArtistIds] = useState<string[]>([]);
     const [genreInput, setGenreInput] = useState<string>("");
     const [genres, setGenres] = useState<string[]>([]);
-    const toggleArtist = (id: string) =>
-        setSelectedArtistIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+    const toggleArtist = (id: string) => setSelectedArtistIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
     const addGenre = () => {
         const g = genreInput.trim();
         if (g && !genres.includes(g)) setGenres((prev) => [...prev, g]);
@@ -57,6 +55,47 @@ export const ContentView: FC = () => {
         reader.readAsDataURL(f);
     };
 
+    // ----- Ratings (1-5 stars) -----
+    const [rating, setRating] = useState<number>(0);
+    const [hoverRating, setHoverRating] = useState<number>(0);
+    const [submittingRating, setSubmittingRating] = useState<boolean>(false);
+
+    const onSubmitRating = async () => {
+        if (!content || !content.contentId) return;
+        if (rating < 1 || rating > 5) {
+            alert("Please select a rating from 1 to 5.");
+            return;
+        }
+        try {
+            setSubmittingRating(true);
+            await rateContent(content.contentId, rating);
+            alert("Thanks! Your rating has been recorded.");
+
+        } catch (e: unknown) {
+            const msg = e instanceof Error ? e.message : String(e);
+            alert(`Failed to submit rating: ${msg}`);
+
+        } finally {
+            setSubmittingRating(false);
+        }
+    };
+
+    // load the existing rating
+    useEffect(() => {
+        const loadRatings = async () => {
+            if (!contentId) return;
+            try {
+                const r = await getRatingByUser(contentId);
+                if (r) setRating(r.rating);
+
+            } catch {
+                // nothing
+            }
+        };
+        void loadRatings();
+    }, []);
+
+
     // ----- View Content part:
     useEffect(() => {
         const fetchContent = async () => {
@@ -77,7 +116,6 @@ export const ContentView: FC = () => {
         };
 
         fetchContent();
-
     }, []);
 
     const toggleDownload = async () => {
@@ -118,10 +156,12 @@ export const ContentView: FC = () => {
         setImageUrl(content.imageUrl ?? "");
         setGenres(Array.isArray(content.genres) ? content.genres.slice() : []);
         setSelectedArtistIds(Array.isArray(content.artistIds) ? content.artistIds.slice() : []);
+
         if (content.albumId) {
             setAlbumMode("existing");
             setSelectedAlbumId(content.albumId);
             setNewAlbumName("");
+
         } else {
             setAlbumMode("new");
             setSelectedAlbumId("");
@@ -141,6 +181,7 @@ export const ContentView: FC = () => {
                         if (!exists && albumsRes.length > 0) setSelectedAlbumId(albumsRes[0].id);
                     }
                 }
+
             } catch {
                 if (!cancelled) {
                     setAlbums([]);
@@ -150,7 +191,7 @@ export const ContentView: FC = () => {
         };
         void load();
         return () => { cancelled = true; };
-    }, [isEditing, content, albumMode]);
+    }, [isEditing]);
 
     // ----- View Content part:
     const togglePlay = () => {
@@ -214,6 +255,7 @@ export const ContentView: FC = () => {
             setContent(updated);
             setIsEditing(false);
             alert("Content updated.");
+
         } catch (e: unknown) {
             const msg = e instanceof Error ? e.message : String(e);
             alert(`Failed to edit content: ${msg}`);
@@ -227,6 +269,7 @@ export const ContentView: FC = () => {
             await deleteContent(contentId);
             alert("Content deleted.");
             navigate("/");
+
         } catch (e: unknown) {
             const msg = e instanceof Error ? e.message : String(e);
             alert(`Failed to delete content: ${msg}`);
@@ -549,7 +592,7 @@ export const ContentView: FC = () => {
                     {content !== null ? new Date(content?.createdAt).toLocaleString() : new Date().toLocaleDateString()}
                     </p>
 
-                    {/* View actions */}
+                    {/* Edit, Delete and Rate Content buttons */}
                     <div style={{ marginTop: 12, display: "flex", justifyContent: "center", gap: 12, flexWrap: "wrap" }}>
                         <button
                             type="button"
@@ -580,6 +623,54 @@ export const ContentView: FC = () => {
                         >
                             Delete
                         </button>
+                    </div>
+
+                    {/* Ratings */}
+                    <div style={{ marginTop: 16, display: "grid", gap: 8, placeItems: "center" }}>
+                        <div style={{ fontWeight: 600 }}>Rate this song</div>
+                        <div style={{ display: "flex", gap: 6 }}>
+                            {[1, 2, 3, 4, 5].map((star) => {
+                                const active = (hoverRating || rating) >= star;
+                                return (
+                                    <button
+                                        key={star}
+                                        type="button"
+                                        onMouseEnter={() => setHoverRating(star)}
+                                        onMouseLeave={() => setHoverRating(0)}
+                                        onClick={() => setRating(star)}
+                                        aria-label={`${star} star${star > 1 ? "s" : ""}`}
+                                        style={{
+                                            cursor: "pointer",
+                                            fontSize: 24,
+                                            lineHeight: 1,
+                                            border: "none",
+                                            background: "transparent",
+                                            color: active ? "#fbbf24" : "#d1d5db",
+                                        }}
+                                    >
+                                    ★
+                                    </button>
+                                );
+                            })}
+                        </div>
+                        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                            <button
+                                type="button"
+                                onClick={onSubmitRating}
+                                disabled={submittingRating}
+                                style={{
+                                    background: submittingRating ? "#93c5fd" : "#3b82f6",
+                                    color: "#fff",
+                                    border: "none",
+                                    borderRadius: 8,
+                                    padding: "8px 12px",
+                                    cursor: submittingRating ? "not-allowed" : "pointer",
+                                    fontWeight: 600,
+                                }}
+                            >
+                                {submittingRating ? "Submitting..." : "Submit rating"}
+                            </button>
+                        </div>
                     </div>
                 </div>
 
