@@ -20,12 +20,28 @@ export const handler: Handler<Rating> = async (event: any) => {
              },
          }));
 
-         return { statusCode: 201, body: JSON.stringify({ userId, contentId, rating, now }) };
+         return {
+             statusCode: 201,
+             headers: {
+                 "Access-Control-Allow-Origin": "*",
+                 "Access-Control-Allow-Credentials": "false",
+                 "Content-Type": "application/json",
+             },
+             body: JSON.stringify({ userId, contentId, rating, now })
+         };
 
      } catch (error: any) {
+         const name = (error as { name?: string } | null)?.name;
+         const statusCode = name === "ConditionalCheckFailedException" ? 409 : 500;
+         const message = error instanceof Error ? error.message : "Unknown error";
          return {
-             statusCode: 500,
-             body: JSON.stringify({ message: error.message }),
+             statusCode,
+             headers: {
+                 "Access-Control-Allow-Origin": "*",
+                 "Access-Control-Allow-Credentials": "false",
+                 "Content-Type": "application/json",
+             },
+             body: JSON.stringify({ message }),
          };
      }
 };
