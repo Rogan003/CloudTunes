@@ -155,6 +155,21 @@ export class AppStack extends cdk.Stack {
             autoDeleteObjects: true,
         });
 
+        const dlq = new sqs.Queue(this, "SubscriptionNotificationsDLQ", {
+            queueName: "subscription-notifications-dlq",
+            retentionPeriod: cdk.Duration.days(14),
+        });
+
+        const subscriptionNotificationsQueue = new sqs.Queue(this, "SubscriptionNotificationsQueue", {
+            queueName: "subscription-notifications-queue",
+            visibilityTimeout: cdk.Duration.seconds(60),
+            retentionPeriod: cdk.Duration.days(1),
+            deadLetterQueue: {
+                maxReceiveCount: 5,
+                queue: dlq,
+            },
+        });
+
         // Lambda Helpers
         const commonLambdaProps = (entry: string, timeoutSec = 5) => ({
             entry,
@@ -452,7 +467,7 @@ export class AppStack extends cdk.Stack {
 
         // POST /subscriptions
         const subs = api.root.addResource("subscriptions");
-        addCorsOptions(subs, ["POST"]);
+        addCorsOptions(subs, ["GET", "POST"]);
         addMethodWithLambda(
             subs,
             "POST",
@@ -462,9 +477,8 @@ export class AppStack extends cdk.Stack {
         );
 
         // DELETE /subscriptions/{type}/{id}
-        const unsubscribe = subs.addResource("{type}")
-            .addResource("{typeId}");
-        addCorsOptions(unsubscribe, ["DELETE"]);
+        const unsubscribe = subs.addResource("{type}").addResource("{typeId}");
+        addCorsOptions(unsubscribe, ["GET", "DELETE"]);
         addMethodWithLambda(
             unsubscribe,
             "DELETE",
@@ -473,38 +487,19 @@ export class AppStack extends cdk.Stack {
         );
 
         // GET /subscriptions/{type}/{id}
-        const getIsSubscribed = subs.addResource("{type}")
-            .addResource("{typeId}");
-        addCorsOptions(unsubscribe, ["GET"]);
         addMethodWithLambda(
-            getIsSubscribed,
+            unsubscribe,
             "GET",
             getIsSubscribedLambda,
             requestTemplate().path("type").path("typeId").build()
         );
 
         // GET /subscriptions/
-        addCorsOptions(subs, ["GET"]);
         addMethodWithLambda(
             subs,
             "GET",
             getSubscriptionsForUserLambda,
         );
-
-        const dlq = new sqs.Queue(this, "SubscriptionNotificationsDLQ", {
-            queueName: "subscription-notifications-dlq",
-            retentionPeriod: cdk.Duration.days(14),
-        });
-
-        const subscriptionNotificationsQueue = new sqs.Queue(this, "SubscriptionNotificationsQueue", {
-            queueName: "subscription-notifications-queue",
-            visibilityTimeout: cdk.Duration.seconds(60),
-            retentionPeriod: cdk.Duration.days(1),
-            deadLetterQueue: {
-                maxReceiveCount: 5,
-                queue: dlq,
-            },
-        });
 
         const emailNotificationLambda = new lambdaNode.NodejsFunction(
             this,
