@@ -1,6 +1,8 @@
 import type { GetContentResponse, UploadContentRequest, UploadContentResponse } from "../models/aws-calls.ts";
 import type {AlbumCard, ArtistCard} from "../../music/models/music-models.ts";
 import { getFromCache } from "./cache-service.ts";
+import type {Rating} from "../models/content-models";
+import { TokenStorage } from "../../users/services/user-token-storage-service";
 
 // API Gateway URL (or from .env)
 export const API_BASE_URL = "https://yztmnnnu7d.execute-api.eu-central-1.amazonaws.com/prod";
@@ -87,5 +89,53 @@ export async function deleteContent(contentId: string): Promise<void> {
         try { body = await response.json(); } catch {}
         throw new Error(body?.message || `Failed to delete content (${response.status})`);
     }
+}
+
+// will move to ratings-service later, don't move now
+export async function getRatingsByContent(contentId: string): Promise<Rating[]> {
+    const res = await fetch(`${API_BASE_URL}/ratings/content/${contentId}`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+    });
+    const body = await res.json();
+    if (!res.ok) {
+        throw new Error((body?.message as string) || `Failed to load ratings (${res.status})`);
+    }
+    return body as Rating[];
+}
+
+// will move to ratings-service later, don't move now
+export async function rateContent(contentId: string, rating: number): Promise<void> {
+    const userId = TokenStorage.getUserId()
+
+    const res = await fetch(`${API_BASE_URL}/ratings`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, contentId, rating }),
+    });
+
+    if (!res.ok) {
+        let body: any;
+        try { body = await res.json(); } catch {}
+        throw new Error(body?.message || `Failed to submit rating (${res.status})`);
+    }
+}
+
+// will move to ratings-service later, don't move now
+export async function getRatingByUser(contentId: string): Promise<Rating | null> {
+    const userId = TokenStorage.getUserId()
+    if (userId === null) return null;
+
+    const res = await fetch(`${API_BASE_URL}/ratings/content/${encodeURIComponent(contentId)}/user/${encodeURIComponent(userId)}`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+    });
+    const body = await res.json();
+
+    if (!res.ok) {
+        throw new Error((body?.message as string) || `Failed to load content (${res.status})`);
+    }
+
+    return body as Rating;
 }
 
