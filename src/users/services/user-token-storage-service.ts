@@ -1,4 +1,5 @@
 import type {CognitoTokens} from "../models/aws-calls.ts";
+import { jwtDecode } from "jwt-decode";
 
 const ACCESS_TOKEN_KEY = "cognito_access_token";
 const ID_TOKEN_KEY = "cognito_id_token";
@@ -32,6 +33,19 @@ export const TokenStorage = {
 
     getRefreshToken: (): string | null => {
         return localStorage.getItem(REFRESH_TOKEN_KEY);
+    },
+
+    getUserId: (): string | null => {
+        const idToken = localStorage.getItem(ID_TOKEN_KEY);
+        if (!idToken) return null;
+
+        try {
+            const decoded = jwtDecode<{ sub?: string; ["cognito:username"]?: string }>(idToken);
+            return decoded.sub || decoded["cognito:username"] || null;
+
+        } catch {
+           return null;
+        }
     },
 
     clearTokens: () => {
