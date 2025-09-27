@@ -185,7 +185,7 @@ export const UploadContent = () => {
                                             title={a.name}
                                         >
                                             <img
-                                                src={a.imageUrl || "https://via.placeholder.com/80?text=Album"}
+                                                src={a.imageUrl || "https://media.istockphoto.com/id/481475560/vector/vinyl-record-template.jpg?s=612x612&w=0&k=20&c=fZgBryspxNnRn8qMa1mEquff_T6wENAY1HXMtNEMyh4="}
                                                 alt={a.name}
                                                 style={styles.albumImg}
                                             />
