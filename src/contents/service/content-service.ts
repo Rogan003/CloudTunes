@@ -21,6 +21,7 @@ export async function uploadContent(content: UploadContentRequest): Promise<Uplo
     return body as UploadContentResponse;
 }
 
+// will be moved to albums-service later, don't move now
 export async function getAllAlbums(): Promise<AlbumCard[]> {
     const res = await fetch(`${API_BASE_URL}/albums`, {
         method: "GET",
@@ -33,6 +34,7 @@ export async function getAllAlbums(): Promise<AlbumCard[]> {
     return body as AlbumCard[];
 }
 
+// will be moved to artists-service later, don't move now
 export async function getAllArtists(): Promise<ArtistCard[]> {
     const res = await fetch(`${API_BASE_URL}/artists`, {
         method: "GET",
