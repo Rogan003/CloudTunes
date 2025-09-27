@@ -235,6 +235,11 @@ export class AppStack extends cdk.Stack {
             "getContent",
             commonLambdaProps("lib/lambdas/get-content.ts")
         );
+        const editContentLambda = new lambdaNode.NodejsFunction(
+            this,
+            "editContent",
+            commonLambdaProps("lib/lambdas/edit-content.ts", 10)
+        );
         const getContentByArtistLambda = new lambdaNode.NodejsFunction(
             this,
             "getContentByArtist",
@@ -254,6 +259,11 @@ export class AppStack extends cdk.Stack {
         genresTable.grantWriteData(uploadContentLambda);
         contentArtistMap.grantReadWriteData(uploadContentLambda);
         contentBucket.grantReadWrite(uploadContentLambda);
+
+        contentTable.grantReadWriteData(editContentLambda);
+        genresTable.grantWriteData(editContentLambda);
+        contentArtistMap.grantReadWriteData(editContentLambda);
+        contentBucket.grantReadWrite(editContentLambda);
 
         contentTable.grantReadData(getContentLambda);
         contentBucket.grantRead(getContentLambda);
@@ -367,12 +377,28 @@ export class AppStack extends cdk.Stack {
 
         // GET /contents/{contentId}
         const singleContent = contents.addResource("{contentId}");
-        addCorsOptions(singleContent, ["GET"]);
+        addCorsOptions(singleContent, ["GET", "PUT"]);
         addMethodWithLambda(
             singleContent,
             "GET",
             getContentLambda,
             requestTemplate().path("contentId").build()
+        );
+        const editContentTmpl = requestTemplate()
+            .path("contentId")
+            .body("title")
+            .body("imageUrl")
+            .body("albumId")
+            .body("albumName")
+            .body("genres")
+            .body("artistIds")
+            .body("fileBase64")
+            .build();
+        addMethodWithLambda(
+            singleContent,
+            "PUT",
+            editContentLambda,
+            editContentTmpl
         );
 
         // GET /contents/artist/{artistId}
