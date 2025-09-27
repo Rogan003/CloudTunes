@@ -293,8 +293,13 @@ export class AppStack extends cdk.Stack {
         const getRatingsByContentLambda = new lambdaNode.NodejsFunction(this, "getRatingsByContentFn",
             commonLambdaProps("lib/lambdas/get-ratings-by-content.ts")
         );
+        const getRatingByUserLambda = new lambdaNode.NodejsFunction(this, "getRatingByUser",
+            commonLambdaProps("lib/lambdas/get-rating-by-user.ts")
+        );
+
         ratingTable.grantReadWriteData(rateContentLambda);
         ratingTable.grantReadData(getRatingsByContentLambda);
+        ratingTable.grantReadData(getRatingByUserLambda);
 
         const subscribeLambda = new lambdaNode.NodejsFunction(
             this,
@@ -470,6 +475,15 @@ export class AppStack extends cdk.Stack {
             "GET",
             getRatingsByContentLambda,
             requestTemplate().path("contentId").build()
+        );
+        // GET /ratings/content/{contentId}/user/{userId}
+        const ratingByUser = ratingsByContent.addResource("user").addResource("{userId}");
+        addCorsOptions(ratingByUser, ["GET"]);
+        addMethodWithLambda(
+            ratingByUser,
+            "GET",
+            getRatingByUserLambda,
+            requestTemplate().path("contentId").path("userId").build()
         );
 
         // POST /subscriptions
