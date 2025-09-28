@@ -8,6 +8,7 @@ import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as sqs from "aws-cdk-lib/aws-sqs";
 import * as eventSources from "aws-cdk-lib/aws-lambda-event-sources";
+import * as ses from "aws-cdk-lib/aws-ses";
 import {RequestValidator, RestApi} from 'aws-cdk-lib/aws-apigateway';
 import { addCorsOptions, addMethodWithLambda } from '../utils/methodUtils';
 import { requestTemplate } from '../utils/requestTemplate';
@@ -257,6 +258,8 @@ export class AppStack extends cdk.Stack {
             "uploadContent",
             commonLambdaProps("lib/lambdas/upload-content.ts", 10)
         );
+        subscriptionNotificationsQueue.grantSendMessages(uploadContentLambda);
+        subscriptionTable.grantReadData(uploadContentLambda);
         const getContentLambda = new lambdaNode.NodejsFunction(
             this,
             "getContent",
@@ -616,6 +619,10 @@ export class AppStack extends cdk.Stack {
                 batchSize: 1,
             })
         );
+
+        new ses.EmailIdentity(this, "SenderIdentity", {
+            identity: ses.Identity.email("veselin.roganovic.rogan003@gmail.com"),
+        });
 
         // Outputs
         new cdk.CfnOutput(this, "ContentTableName", { value: contentTable.tableName });
