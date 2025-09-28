@@ -29,10 +29,26 @@ export const handler: Handler<boolean> = async (event: any) => {
         }));
 
         if (!Item) {
-            return { statusCode: 200, body: JSON.stringify(false) };
+            return {
+                statusCode: 200,
+                headers: {
+                    "Access-Control-Allow-Origin": "*",
+                    "Access-Control-Allow-Credentials": "true",
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(false)
+            };
         }
 
-        return { statusCode: 200, body: JSON.stringify(true) };
+        return {
+            statusCode: 200,
+            headers: {
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Credentials": "true",
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(true)
+        };
 
     } catch (error: any) {
         return { statusCode: 500, body: JSON.stringify({ message: error.message }) };

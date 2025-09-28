@@ -55,8 +55,6 @@ export const SubscriptionsPage: React.FC = () => {
           } else {
               setGenres(genres.filter(g => g.id !== id));
           }
-      }).catch(err => {
-          console.log(err);
       })
   };
 

@@ -29,7 +29,15 @@ export const handler: Handler<Subscription> = async (event: any) => {
             },
         }));
 
-        return {statusCode: 204, body: JSON.stringify("Deleted!")};
+        return {
+            statusCode: 204,
+            headers: {
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Credentials": "true",
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify("Deleted!")
+        };
 
     } catch (error: any) {
         return {

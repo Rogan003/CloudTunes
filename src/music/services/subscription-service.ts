@@ -41,13 +41,11 @@ export async function unsubscribe(type: string, id: string): Promise<string> {
         headers: { "Content-Type": "application/json" },
     });
 
-    const body = await response.json();
-
     if (!response.ok) {
-        throw new Error(body.message || `Unsubscribing failed with status ${response.status}`);
+        throw new Error(`Unsubscribing failed with status ${response.status}`);
     }
 
-    return body;
+    return "Deleted!";
 }
 
 export async function getIsSubscribed(type: string, id: string): Promise<boolean> {

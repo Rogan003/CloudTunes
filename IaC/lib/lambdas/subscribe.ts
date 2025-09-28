@@ -29,7 +29,15 @@ export const handler: Handler<Subscription> = async (event: any) => {
             },
         }));
 
-        return {statusCode: 201, body: JSON.stringify({email, type, typeId, now})};
+        return {
+            statusCode: 201,
+            headers: {
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Credentials": "true",
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({email, type, typeId, now})
+        };
 
     } catch (error: any) {
         return {
