@@ -72,7 +72,7 @@ export const SubscriptionsPage: React.FC = () => {
           <>
             <Grid>
               {artistItems.map(a => (
-                <Card key={a.id} title={a.name} imageUrl={a.imageUrl} actionLabel="Unsubscribe" onActionClick={() => onUnsub("artists", a.id)} onClick={() => navigate(`/artists/${a.id}`)} />
+                <Card key={a.id} title={a.name} imageUrl={a.imageUrl} actionLabel="Unsubscribe" onActionClick={() => onUnsub("artist", a.id)} onClick={() => navigate(`/artists/${a.id}`)} />
               ))}
             </Grid>
             <Pagination total={artists.length} pageSize={pageSize} page={artistPage} onChange={setArtistPage} />
@@ -85,7 +85,7 @@ export const SubscriptionsPage: React.FC = () => {
           <>
             <Grid>
               {albumItems.map(a => (
-                <Card key={a.id} title={a.name} imageUrl={a.imageUrl} actionLabel="Unsubscribe" onActionClick={() => onUnsub("albums", a.id)} onClick={() => navigate(`/albums/${a.id}`)} />
+                <Card key={a.id} title={a.name} imageUrl={a.imageUrl} actionLabel="Unsubscribe" onActionClick={() => onUnsub("album", a.id)} onClick={() => navigate(`/albums/${a.id}`)} />
               ))}
             </Grid>
             <Pagination total={albums.length} pageSize={pageSize} page={albumPage} onChange={setAlbumPage} />
@@ -98,7 +98,7 @@ export const SubscriptionsPage: React.FC = () => {
           <>
             <Grid>
               {genreItems.map(g => (
-                <Card key={g.id} title={g.name} imageUrl={g.imageUrl} actionLabel="Unsubscribe" onActionClick={() => onUnsub("genres", g.id)} onClick={() => navigate(`/discover`)} />
+                <Card key={g.id} title={g.name} imageUrl={g.imageUrl} actionLabel="Unsubscribe" onActionClick={() => onUnsub("genre", g.id)} onClick={() => navigate(`/discover`)} />
               ))}
             </Grid>
             <Pagination total={genres.length} pageSize={pageSize} page={genrePage} onChange={setGenrePage} />
