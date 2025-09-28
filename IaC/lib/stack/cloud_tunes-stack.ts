@@ -308,6 +308,14 @@ export class AppStack extends cdk.Stack {
         );
         subscriptionTable.grantReadWriteData(subscribeLambda);
 
+        const transcriptionLambda = new lambdaNode.NodejsFunction(
+            this,
+            "transcription",
+            commonLambdaProps("lib/lambdas/transcription.ts")
+        );
+        contentTable.grantReadWriteData(transcriptionLambda);
+        contentBucket.grantRead(transcriptionLambda);
+
         // API Gateway
         const api = new RestApi(this, "cloudtunes-api");
 
