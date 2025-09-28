@@ -67,7 +67,6 @@ export const SubscriptionsPage: React.FC = () => {
           <BackButton />
           <h2 style={{ margin: 0 }}>My Subscriptions</h2>
         </div>
-        <button onClick={() => navigate("/subscriptions/add")}>Add subscription</button>
       </div>
 
       <Section title="Artists">
