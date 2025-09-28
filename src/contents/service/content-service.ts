@@ -3,12 +3,10 @@ import type {AlbumCard, ArtistCard} from "../../music/models/music-models.ts";
 import { getFromCache } from "./cache-service.ts";
 import type {Rating} from "../models/content-models";
 import { TokenStorage } from "../../users/services/user-token-storage-service";
-
-// API Gateway URL (or from .env)
-export const API_BASE_URL = "https://yztmnnnu7d.execute-api.eu-central-1.amazonaws.com/prod";
+import { apiFetch, API_BASE_URL } from "../../shared/api";
 
 export async function uploadContent(content: UploadContentRequest): Promise<UploadContentResponse> {
-    const response = await fetch(`${API_BASE_URL}/contents`, {
+    const response = await apiFetch(`${API_BASE_URL}/contents`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(content),
@@ -25,7 +23,7 @@ export async function uploadContent(content: UploadContentRequest): Promise<Uplo
 
 // will be moved to albums-service later, don't move now
 export async function getAllAlbums(): Promise<AlbumCard[]> {
-    const res = await fetch(`${API_BASE_URL}/albums`, {
+    const res = await apiFetch(`${API_BASE_URL}/albums`, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
     });
@@ -38,7 +36,7 @@ export async function getAllAlbums(): Promise<AlbumCard[]> {
 
 // will be moved to artists-service later, don't move now
 export async function getAllArtists(): Promise<ArtistCard[]> {
-    const res = await fetch(`${API_BASE_URL}/artists`, {
+    const res = await apiFetch(`${API_BASE_URL}/artists`, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
     });
@@ -50,7 +48,7 @@ export async function getAllArtists(): Promise<ArtistCard[]> {
 }
 
 export async function getContent(contentId: string): Promise<GetContentResponse> {
-    const response = await fetch(`${API_BASE_URL}/contents/${contentId}`, {
+    const response = await apiFetch(`${API_BASE_URL}/contents/${contentId}`, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
     });
@@ -67,7 +65,7 @@ export async function getContent(contentId: string): Promise<GetContentResponse>
 }
 
 export async function editContent(contentId: string, update: Partial<UploadContentRequest>): Promise<GetContentResponse> {
-    const response = await fetch(`${API_BASE_URL}/contents/${contentId}`, {
+    const response = await apiFetch(`${API_BASE_URL}/contents/${contentId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(update),
@@ -80,7 +78,7 @@ export async function editContent(contentId: string, update: Partial<UploadConte
 }
 
 export async function deleteContent(contentId: string): Promise<void> {
-    const response = await fetch(`${API_BASE_URL}/contents/${contentId}`, {
+    const response = await apiFetch(`${API_BASE_URL}/contents/${contentId}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
     });
@@ -93,7 +91,7 @@ export async function deleteContent(contentId: string): Promise<void> {
 
 // will move to ratings-service later, don't move now
 export async function getRatingsByContent(contentId: string): Promise<Rating[]> {
-    const res = await fetch(`${API_BASE_URL}/ratings/content/${contentId}`, {
+    const res = await apiFetch(`${API_BASE_URL}/ratings/content/${contentId}`, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
     });
@@ -108,7 +106,7 @@ export async function getRatingsByContent(contentId: string): Promise<Rating[]> 
 export async function rateContent(contentId: string, rating: number): Promise<void> {
     const userId = TokenStorage.getUserId()
 
-    const res = await fetch(`${API_BASE_URL}/ratings`, {
+    const res = await apiFetch(`${API_BASE_URL}/ratings`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId, contentId, rating }),
@@ -126,7 +124,7 @@ export async function getRatingByUser(contentId: string): Promise<Rating | null>
     const userId = TokenStorage.getUserId()
     if (userId === null) return null;
 
-    const res = await fetch(`${API_BASE_URL}/ratings/content/${encodeURIComponent(contentId)}/user/${encodeURIComponent(userId)}`, {
+    const res = await apiFetch(`${API_BASE_URL}/ratings/content/${encodeURIComponent(contentId)}/user/${encodeURIComponent(userId)}`, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
     });

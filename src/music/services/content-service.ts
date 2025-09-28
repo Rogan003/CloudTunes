@@ -1,6 +1,5 @@
 import type {ContentCard} from "../../shared/models/content-models.ts";
-
-export const API_BASE_URL = "https://yztmnnnu7d.execute-api.eu-central-1.amazonaws.com/prod";
+import { apiFetch, API_BASE_URL } from "../../shared/api";
 
 export async function getSongsForArtist(artistId: string): Promise<ContentCard[]> {
     const response = await fetch(`${API_BASE_URL}/contents/artist/` + artistId, {

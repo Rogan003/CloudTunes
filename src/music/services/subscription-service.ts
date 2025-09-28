@@ -1,9 +1,8 @@
 import type {SubscriptionCard} from "../models/music-models.ts";
-
-export const API_BASE_URL = "https://yztmnnnu7d.execute-api.eu-central-1.amazonaws.com/prod";
+import { apiFetch, API_BASE_URL } from "../../shared/api";
 
 export async function getSubscriptionsForUser(): Promise<SubscriptionCard[]> {
-    const response = await fetch(`${API_BASE_URL}/subscriptions`, {
+    const response = await apiFetch(`${API_BASE_URL}/subscriptions`, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
     });
@@ -18,7 +17,7 @@ export async function getSubscriptionsForUser(): Promise<SubscriptionCard[]> {
 }
 
 export async function subscribe(type: string, id: string): Promise<any> {
-    const response = await fetch(`${API_BASE_URL}/subscriptions/`, {
+    const response = await apiFetch(`${API_BASE_URL}/subscriptions/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -37,7 +36,7 @@ export async function subscribe(type: string, id: string): Promise<any> {
 }
 
 export async function unsubscribe(type: string, id: string): Promise<string> {
-    const response = await fetch(`${API_BASE_URL}/subscriptions/` + type + "/" + id, {
+    const response = await apiFetch(`${API_BASE_URL}/subscriptions/` + type + "/" + id, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
     });
@@ -52,7 +51,7 @@ export async function unsubscribe(type: string, id: string): Promise<string> {
 }
 
 export async function getIsSubscribed(type: string, id: string): Promise<boolean> {
-    const response = await fetch(`${API_BASE_URL}/subscriptions/` + type + "/" + id, {
+    const response = await apiFetch(`${API_BASE_URL}/subscriptions/` + type + "/" + id, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
     });
