@@ -25,15 +25,15 @@ export const handler: Handler<AlbumCard[]> = async (event: any) => {
                     new GetItemCommand({
                         TableName: contentTable,
                         Key: {
-                            contentId: { S: "ALBUMS" },
-                            sortKey: { S: `${albumId}` }
+                            contentId: { S: "Albums" },
+                            sortKey: { S: albumId }
                         }
                     })
                 );
 
                 albums.push({
                     id: albumId,
-                    name: Item?.albumName?.S ?? ""
+                    name: Item?.albumName.S ?? ""
                 })
             }
         }

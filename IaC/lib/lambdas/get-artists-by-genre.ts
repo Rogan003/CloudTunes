@@ -25,7 +25,8 @@ export const handler: Handler<ArtistCard[]> = async (event: any) => {
                     new GetItemCommand({
                         TableName: artistTable,
                         Key: {
-                            PK: { S: "${artistId}" }
+                            artistId: { S: artistId },
+                            itemKey: { S: artistId }
                         }
                     })
                 );
