@@ -8,7 +8,7 @@ import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as sqs from "aws-cdk-lib/aws-sqs";
 import * as eventSources from "aws-cdk-lib/aws-lambda-event-sources";
-import { RestApi } from 'aws-cdk-lib/aws-apigateway';
+import {RequestValidator, RestApi} from 'aws-cdk-lib/aws-apigateway';
 import { addCorsOptions, addMethodWithLambda } from '../utils/methodUtils';
 import { requestTemplate } from '../utils/requestTemplate';
 import { createArtistModelOptions, uploadContentModelOptions, ratingModelOptions, subscriptionModelOptions} from "../models/model-options";
@@ -361,10 +361,16 @@ export class AppStack extends cdk.Stack {
         // API Gateway
         const api = new RestApi(this, "cloudtunes-api");
 
+        // Shared API validator
+        const sharedValidator = new RequestValidator(this, 'SharedValidator', {
+            restApi: api,
+            validateRequestBody: true,
+        });
+
         // GET and POST /artists
         const artists = api.root.addResource("artists");
         addCorsOptions(artists, ["POST", "GET"]);
-        addMethodWithLambda(artists, "GET", getArtistsLambda);
+        addMethodWithLambda(artists, "GET", getArtistsLambda, sharedValidator);
         const createArtistTmpl = requestTemplate()
             // .header("Authorization")
             .body("name")
@@ -375,6 +381,7 @@ export class AppStack extends cdk.Stack {
             artists,
             "POST",
             createArtistLambda,
+            sharedValidator,
             createArtistTmpl,
             api.addModel("CreateArtistModel", createArtistModelOptions)
         );
@@ -386,6 +393,7 @@ export class AppStack extends cdk.Stack {
             singleArtist,
             "GET",
             getArtistLambda,
+            sharedValidator,
             requestTemplate().path("artistId").build()
         );
 
@@ -396,13 +404,14 @@ export class AppStack extends cdk.Stack {
             artistsByGenre,
             "GET",
             getArtistsByGenreLambda,
+            sharedValidator,
             requestTemplate().path("genre").build()
         );
 
         // Add: GET /albums
         const albums = api.root.addResource("albums");
         addCorsOptions(albums, ["GET"]);
-        addMethodWithLambda(albums, "GET", getAlbumsLambda);
+        addMethodWithLambda(albums, "GET", getAlbumsLambda, sharedValidator);
 
         // GET /albums/genre/{genre}
         const albumsByGenre = albums.addResource("genre").addResource("{genre}");
@@ -411,6 +420,7 @@ export class AppStack extends cdk.Stack {
             albumsByGenre,
             "GET",
             getAlbumsByGenreLambda,
+            sharedValidator,
             requestTemplate().path("genre").build()
         );
 
@@ -420,6 +430,7 @@ export class AppStack extends cdk.Stack {
             genres,
             "GET",
             getGenres,
+            sharedValidator
         );
 
         // POST /contents
@@ -438,6 +449,7 @@ export class AppStack extends cdk.Stack {
             contents,
             "POST",
             uploadContentLambda,
+            sharedValidator,
             uploadContentTmpl,
             api.addModel("UploadContentModel", uploadContentModelOptions)
         );
@@ -449,6 +461,7 @@ export class AppStack extends cdk.Stack {
             singleContent,
             "GET",
             getContentLambda,
+            sharedValidator,
             requestTemplate().path("contentId").build()
         );
         // PUT /contents/{contentId}
@@ -466,6 +479,7 @@ export class AppStack extends cdk.Stack {
             singleContent,
             "PUT",
             editContentLambda,
+            sharedValidator,
             editContentTmpl
         );
         // DELETE /contents/{contentId}
@@ -473,6 +487,7 @@ export class AppStack extends cdk.Stack {
             singleContent,
             "DELETE",
             deleteContentLambda,
+            sharedValidator,
             requestTemplate().path("contentId").build()
         );
 
@@ -483,6 +498,7 @@ export class AppStack extends cdk.Stack {
             contentsByArtist,
             "GET",
             getContentByArtistLambda,
+            sharedValidator,
             requestTemplate().path("artistId").build()
         );
 
@@ -493,6 +509,7 @@ export class AppStack extends cdk.Stack {
             contentsByAlbum,
             "GET",
             getContentByAlbumLambda,
+            sharedValidator,
             requestTemplate().path("albumId").build()
         );
 
@@ -503,6 +520,7 @@ export class AppStack extends cdk.Stack {
             contentsByGenre,
             "GET",
             getContentByGenreLambda,
+            sharedValidator,
             requestTemplate().path("genre").build()
         );
 
@@ -513,6 +531,7 @@ export class AppStack extends cdk.Stack {
             ratings,
             "POST",
             rateContentLambda,
+            sharedValidator,
             requestTemplate().body("userId").body("contentId").body("rating").build(),
             api.addModel("RatingModel", ratingModelOptions)
         );
@@ -524,6 +543,7 @@ export class AppStack extends cdk.Stack {
             ratingsByContent,
             "GET",
             getRatingsByContentLambda,
+            sharedValidator,
             requestTemplate().path("contentId").build()
         );
         // GET /ratings/content/{contentId}/user/{userId}
@@ -533,6 +553,7 @@ export class AppStack extends cdk.Stack {
             ratingByUser,
             "GET",
             getRatingByUserLambda,
+            sharedValidator,
             requestTemplate().path("contentId").path("userId").build()
         );
 
@@ -543,6 +564,7 @@ export class AppStack extends cdk.Stack {
             subs,
             "POST",
             subscribeLambda,
+            sharedValidator,
             requestTemplate().body("type").body("typeId").build(),
             api.addModel("SubscriptionModel", subscriptionModelOptions)
         );
@@ -554,6 +576,7 @@ export class AppStack extends cdk.Stack {
             unsubscribe,
             "DELETE",
             unsubscribeLambda,
+            sharedValidator,
             requestTemplate().path("type").path("typeId").build()
         );
 
@@ -562,6 +585,7 @@ export class AppStack extends cdk.Stack {
             unsubscribe,
             "GET",
             getIsSubscribedLambda,
+            sharedValidator,
             requestTemplate().path("type").path("typeId").build()
         );
 
@@ -570,6 +594,7 @@ export class AppStack extends cdk.Stack {
             subs,
             "GET",
             getSubscriptionsForUserLambda,
+            sharedValidator
         );
 
         const emailNotificationLambda = new lambdaNode.NodejsFunction(

@@ -1,5 +1,12 @@
 import { Duration } from "aws-cdk-lib";
-import { IResource, IModel, LambdaIntegration, PassthroughBehavior, MockIntegration } from "aws-cdk-lib/aws-apigateway";
+import {
+    IResource,
+    IModel,
+    LambdaIntegration,
+    PassthroughBehavior,
+    MockIntegration,
+    IRequestValidator
+} from "aws-cdk-lib/aws-apigateway";
 import { IFunction } from "aws-cdk-lib/aws-lambda";
 
 const APP_JSON = "application/json";
@@ -12,8 +19,9 @@ export function addMethodWithLambda(
   apiResource: IResource,
   httpMethod: "GET" | "PUT" | "POST" | "DELETE",
   lambda: IFunction,
+  validator: IRequestValidator,
   requestTemplate?: string,
-  requestModel?: IModel
+  requestModel?: IModel,
 ) {
   return apiResource.addMethod(
     httpMethod,
@@ -68,7 +76,7 @@ export function addMethodWithLambda(
         { statusCode: "409", responseParameters: { [ALLOW_ORIGIN_HEADER]: true } },
         { statusCode: "500", responseParameters: { [ALLOW_ORIGIN_HEADER]: true } },
       ],
-      requestValidatorOptions: { validateRequestBody: true },
+      requestValidator: validator
     }
   );
 }
