@@ -15,6 +15,7 @@ export const Home = () => {
 
     const logout = () => {
         globalSignOut(TokenStorage.getAccessToken()!)
+        TokenStorage.clearTokens()
         navigate("/login")
     }
 
