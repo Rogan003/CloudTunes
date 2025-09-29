@@ -21,7 +21,7 @@ export function addMethodWithLambda(
   httpMethod: "GET" | "PUT" | "POST" | "DELETE",
   lambda: IFunction,
   validator: IRequestValidator,
-  authorizer?: IAuthorizer,
+  authorizer: IAuthorizer,
   requestTemplate?: string,
   requestModel?: IModel,
 ) {
