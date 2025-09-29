@@ -22,7 +22,10 @@ export const handler: Handler<ContentCard[]> = async (event: any) => {
                 const contentId = i.contentId.S!;
                 const { Item } = await client.send(new GetItemCommand({
                     TableName: contentTable,
-                    Key: { contentId: { S: contentId } }
+                    Key: {
+                        contentId: { S: contentId },
+                        sortKey: { S: contentId }
+                    }
                 }));
                 if (Item) {
                     const contentId = Item.contentId.S!;

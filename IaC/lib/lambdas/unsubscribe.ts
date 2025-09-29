@@ -1,4 +1,4 @@
-import { DynamoDBClient, PutItemCommand } from "@aws-sdk/client-dynamodb";
+import {DeleteItemCommand, DynamoDBClient} from "@aws-sdk/client-dynamodb";
 import { Handler } from "aws-lambda";
 import {Subscription} from "aws-cdk-lib/aws-sns";
 import jwt from "jsonwebtoken";
@@ -16,27 +16,27 @@ export const handler: Handler<Subscription> = async (event: any) => {
         if (!decoded) throw new Error("Invalid token");
         const email = (decoded as any)["email"];
 
-        const {type, typeId} = JSON.parse(event.body);
-        const SK = `${type.toUpperCase()}#${typeId}`;
-        const now = new Date().toISOString();
+        const type = event.pathParameters.type;
+        const typeId = event.pathParameters.typeId;
 
-        await client.send(new PutItemCommand({
+        const SK = `${type.toUpperCase()}#${typeId}`;
+
+        await client.send(new DeleteItemCommand({
             TableName: subscriptionTable,
-            Item: {
+            Key: {
                 userEmail: { S: email },
                 SK: { S: SK },
-                timestamp: { S: now },
             },
         }));
 
         return {
-            statusCode: 201,
+            statusCode: 204,
             headers: {
                 "Access-Control-Allow-Origin": "*",
                 "Access-Control-Allow-Credentials": "true",
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify({email, type, typeId, now})
+            body: JSON.stringify("Deleted!")
         };
 
     } catch (error: any) {
