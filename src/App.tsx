@@ -11,22 +11,23 @@ import { AlbumSongsPage } from "./music/components/AlbumSongsPage";
 import { SubscriptionsPage } from "./music/components/SubscriptionsPage";
 import {UploadContent} from "./contents/components/UploadContent.tsx";
 import { ContentView } from './contents/components/ContentViewPage.tsx';
+import { RequireAuth, RequireGuest, RequireRole } from './shared/guards';
 
 function App() {
     return (
         <BrowserRouter>
             <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/register" element={<Register />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/confirm-registration" element={<ConfirmRegistration />} />
-                <Route path="/create-artist" element={<CreateArtistForm />} />
-                <Route path="/discover" element={<DiscoverPage />} />
-                <Route path="/artists/:artistId" element={<ArtistSongsPage />} />
-                <Route path="/albums/:albumId" element={<AlbumSongsPage />} />
-                <Route path="/subscriptions" element={<SubscriptionsPage />} />
-                <Route path="/upload-content" element={<UploadContent/>} />
-                <Route path="/songs/:contentId" element={<ContentView/>} />
+                <Route path="/" element={<RequireAuth><Home /></RequireAuth>} />
+                <Route path="/register" element={<RequireGuest><Register /></RequireGuest>} />
+                <Route path="/login" element={<RequireGuest><Login /></RequireGuest>} />
+                <Route path="/confirm-registration" element={<RequireGuest><ConfirmRegistration /></RequireGuest>} />
+                <Route path="/create-artist" element={<RequireRole role="admin"><CreateArtistForm /></RequireRole>} />
+                <Route path="/discover" element={<RequireRole role="user"><DiscoverPage /></RequireRole>} />
+                <Route path="/artists/:artistId" element={<RequireRole role="user"><ArtistSongsPage /></RequireRole>} />
+                <Route path="/albums/:albumId" element={<RequireRole role="user"><AlbumSongsPage /></RequireRole>} />
+                <Route path="/subscriptions" element={<RequireRole role="user"><SubscriptionsPage /></RequireRole>} />
+                <Route path="/upload-content" element={<RequireRole role="admin"><UploadContent/></RequireRole>} />
+                <Route path="/songs/:contentId" element={<RequireAuth><ContentView/></RequireAuth>} />
             </Routes>
         </BrowserRouter>
     )

@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import {deleteContent, editContent, getAllAlbums, getAllArtists, getContent, getRatingByUser, rateContent} from "../service/content-service";
 import type { GetContentResponse } from "../models/aws-calls";
 import { getFromCache, removeFromCache, saveToCache } from "../service/cache-service";
+import { AuthService } from "../../users/services/auth-service";
 
 export const ContentView: FC = () => {
     const { contentId } = useParams();
@@ -14,6 +15,7 @@ export const ContentView: FC = () => {
     const [isPlaying, setIsPlaying] = useState(false);
     const [progress, setProgress] = useState(0);
     const [isDownloaded, setIsDownloaded] = useState(false);
+    const isUser = AuthService.hasRole("user");
 
     // ----- Edit Content part:
     const [isEditing, setIsEditing] = useState(false);
@@ -625,6 +627,7 @@ export const ContentView: FC = () => {
                     </div>
 
                     {/* Ratings */}
+                    {isUser && (
                     <div style={{ marginTop: 16, display: "grid", gap: 8, placeItems: "center" }}>
                         <div style={{ fontWeight: 600 }}>Rate this song</div>
                         <div style={{ display: "flex", gap: 6 }}>
@@ -671,6 +674,7 @@ export const ContentView: FC = () => {
                             </button>
                         </div>
                     </div>
+                    )}
                 </div>
 
                 {/* Right side - image and player */}
