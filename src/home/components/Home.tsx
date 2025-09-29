@@ -14,7 +14,8 @@ export const Home = () => {
     const navigate = useNavigate()
 
     const logout = () => {
-        globalSignOut(TokenStorage.getAccessToken()!).then(() => navigate("/login"))
+        globalSignOut(TokenStorage.getAccessToken()!)
+        navigate("/login")
     }
 
     const createArtist = () => {
