@@ -7,7 +7,8 @@ const sourceEmail = "veselin.roganovic.rogan003@gmail.com"
 export const handler: Handler<SQSEvent> = async (event: SQSEvent) => {
     try {
         for (const record of event.Records) {
-            processMessage(record);
+            console.log(event.Records);
+            await processMessage(record);
         }
         return { statusCode: 200 };
     } catch (error: any) {
@@ -18,6 +19,7 @@ export const handler: Handler<SQSEvent> = async (event: SQSEvent) => {
 
 async function processMessage(record: SQSRecord) {
     const { songName, userEmail } = JSON.parse(record.body);
+    console.log(`Entry: ${songName} ${userEmail}`);
 
     const command = new SendEmailCommand({
         Source: sourceEmail,

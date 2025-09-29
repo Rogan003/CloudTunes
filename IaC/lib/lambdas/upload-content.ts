@@ -216,7 +216,7 @@ export const handler: Handler<Content> = async (event: any) => {
         }
 
         for (const userEmail of userEmailsForNotification) {
-            const messageBody = JSON.stringify({ title, email: userEmail });
+            const messageBody = JSON.stringify({ songName: title, userEmail });
 
             const command = new SendMessageCommand({
                 QueueUrl: subscriptionQueueUrl,
