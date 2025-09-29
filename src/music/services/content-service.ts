@@ -2,7 +2,7 @@ import type {ContentCard} from "../../shared/models/content-models.ts";
 import { apiFetch, API_BASE_URL } from "../../shared/api";
 
 export async function getSongsForArtist(artistId: string): Promise<ContentCard[]> {
-    const response = await fetch(`${API_BASE_URL}/contents/artist/` + artistId, {
+    const response = await apiFetch(`${API_BASE_URL}/contents/artist/` + artistId, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
     });
@@ -17,7 +17,7 @@ export async function getSongsForArtist(artistId: string): Promise<ContentCard[]
 }
 
 export async function getSongsForAlbum(albumId: string): Promise<ContentCard[]> {
-    const response = await fetch(`${API_BASE_URL}/contents/album/` + albumId, {
+    const response = await apiFetch(`${API_BASE_URL}/contents/album/` + albumId, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
     });

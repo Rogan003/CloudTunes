@@ -9,7 +9,7 @@ import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as sqs from "aws-cdk-lib/aws-sqs";
 import * as eventSources from "aws-cdk-lib/aws-lambda-event-sources";
 import * as ses from "aws-cdk-lib/aws-ses";
-import {RequestValidator, RestApi} from 'aws-cdk-lib/aws-apigateway';
+import {RequestValidator, RestApi, TokenAuthorizer} from 'aws-cdk-lib/aws-apigateway';
 import { addCorsOptions, addMethodWithLambda } from '../utils/methodUtils';
 import { requestTemplate } from '../utils/requestTemplate';
 import { createArtistModelOptions, uploadContentModelOptions, ratingModelOptions, subscriptionModelOptions} from "../models/model-options";
@@ -370,10 +370,44 @@ export class AppStack extends cdk.Stack {
             validateRequestBody: true,
         });
 
+        // Custom Lambda Authorizers
+        const authorizeAdminLambda = new lambdaNode.NodejsFunction(
+            this,
+            "AuthorizeAdminLambda",
+            commonLambdaProps("lib/lambdas/authorize-admin.ts")
+        );
+        const tokenAuthorizerAdmin = new TokenAuthorizer(this, "ApiTokenAdminAuthorizer", {
+            handler: authorizeAdminLambda,
+            identitySource: "method.request.header.Authorization",
+            resultsCacheTtl: cdk.Duration.seconds(0),
+        });
+
+        const authorizeRegularUserLambda = new lambdaNode.NodejsFunction(
+            this,
+            "AuthorizeRegularUserLambda",
+            commonLambdaProps("lib/lambdas/authorize-regular.ts")
+        );
+        const tokenAuthorizerRegularUser = new TokenAuthorizer(this, "ApiTokenRegularUserAuthorizer", {
+            handler: authorizeRegularUserLambda,
+            identitySource: "method.request.header.Authorization",
+            resultsCacheTtl: cdk.Duration.seconds(0),
+        });
+
+        const authorizeAnyUserLambda = new lambdaNode.NodejsFunction(
+            this,
+            "AuthorizeAnyUserLambda",
+            commonLambdaProps("lib/lambdas/authorize-any-auth.ts")
+        );
+        const tokenAuthorizerAnyUser = new TokenAuthorizer(this, "ApiTokenAnyUserAuthorizer", {
+            handler: authorizeAnyUserLambda,
+            identitySource: "method.request.header.Authorization",
+            resultsCacheTtl: cdk.Duration.seconds(0),
+        });
+
         // GET and POST /artists
         const artists = api.root.addResource("artists");
         addCorsOptions(artists, ["POST", "GET"]);
-        addMethodWithLambda(artists, "GET", getArtistsLambda, sharedValidator);
+        addMethodWithLambda(artists, "GET", getArtistsLambda, sharedValidator, tokenAuthorizerAdmin);
         const createArtistTmpl = requestTemplate()
             // .header("Authorization")
             .body("name")
@@ -385,6 +419,7 @@ export class AppStack extends cdk.Stack {
             "POST",
             createArtistLambda,
             sharedValidator,
+            tokenAuthorizerAdmin,
             createArtistTmpl,
             api.addModel("CreateArtistModel", createArtistModelOptions)
         );
@@ -397,6 +432,7 @@ export class AppStack extends cdk.Stack {
             "GET",
             getArtistLambda,
             sharedValidator,
+            tokenAuthorizerAdmin,
             requestTemplate().path("artistId").build()
         );
 
@@ -408,13 +444,14 @@ export class AppStack extends cdk.Stack {
             "GET",
             getArtistsByGenreLambda,
             sharedValidator,
+            tokenAuthorizerRegularUser,
             requestTemplate().path("genre").build()
         );
 
         // Add: GET /albums
         const albums = api.root.addResource("albums");
         addCorsOptions(albums, ["GET"]);
-        addMethodWithLambda(albums, "GET", getAlbumsLambda, sharedValidator);
+        addMethodWithLambda(albums, "GET", getAlbumsLambda, sharedValidator, tokenAuthorizerAdmin);
 
         // GET /albums/genre/{genre}
         const albumsByGenre = albums.addResource("genre").addResource("{genre}");
@@ -424,6 +461,7 @@ export class AppStack extends cdk.Stack {
             "GET",
             getAlbumsByGenreLambda,
             sharedValidator,
+            tokenAuthorizerRegularUser,
             requestTemplate().path("genre").build()
         );
 
@@ -433,7 +471,8 @@ export class AppStack extends cdk.Stack {
             genres,
             "GET",
             getGenres,
-            sharedValidator
+            sharedValidator,
+            tokenAuthorizerRegularUser
         );
 
         // POST /contents
@@ -453,8 +492,9 @@ export class AppStack extends cdk.Stack {
             "POST",
             uploadContentLambda,
             sharedValidator,
+            tokenAuthorizerAdmin,
             uploadContentTmpl,
-            api.addModel("UploadContentModel", uploadContentModelOptions)
+            api.addModel("UploadContentModel", uploadContentModelOptions),
         );
 
         // GET /contents/{contentId}
@@ -465,6 +505,7 @@ export class AppStack extends cdk.Stack {
             "GET",
             getContentLambda,
             sharedValidator,
+            tokenAuthorizerAnyUser,
             requestTemplate().path("contentId").build()
         );
         // PUT /contents/{contentId}
@@ -483,6 +524,7 @@ export class AppStack extends cdk.Stack {
             "PUT",
             editContentLambda,
             sharedValidator,
+            tokenAuthorizerAdmin,
             editContentTmpl
         );
         // DELETE /contents/{contentId}
@@ -491,6 +533,7 @@ export class AppStack extends cdk.Stack {
             "DELETE",
             deleteContentLambda,
             sharedValidator,
+            tokenAuthorizerAdmin,
             requestTemplate().path("contentId").build()
         );
         // PUT /contents/{contentId}
@@ -526,6 +569,7 @@ export class AppStack extends cdk.Stack {
             "GET",
             getContentByArtistLambda,
             sharedValidator,
+            tokenAuthorizerRegularUser,
             requestTemplate().path("artistId").build()
         );
 
@@ -537,6 +581,7 @@ export class AppStack extends cdk.Stack {
             "GET",
             getContentByAlbumLambda,
             sharedValidator,
+            tokenAuthorizerRegularUser,
             requestTemplate().path("albumId").build()
         );
 
@@ -548,6 +593,7 @@ export class AppStack extends cdk.Stack {
             "GET",
             getContentByGenreLambda,
             sharedValidator,
+            tokenAuthorizerRegularUser,
             requestTemplate().path("genre").build()
         );
 
@@ -559,6 +605,7 @@ export class AppStack extends cdk.Stack {
             "POST",
             rateContentLambda,
             sharedValidator,
+            tokenAuthorizerRegularUser,
             requestTemplate().body("userId").body("contentId").body("rating").build(),
             api.addModel("RatingModel", ratingModelOptions)
         );
@@ -571,6 +618,7 @@ export class AppStack extends cdk.Stack {
             "GET",
             getRatingsByContentLambda,
             sharedValidator,
+            tokenAuthorizerRegularUser,
             requestTemplate().path("contentId").build()
         );
         // GET /ratings/content/{contentId}/user/{userId}
@@ -581,6 +629,7 @@ export class AppStack extends cdk.Stack {
             "GET",
             getRatingByUserLambda,
             sharedValidator,
+            tokenAuthorizerRegularUser,
             requestTemplate().path("contentId").path("userId").build()
         );
 
@@ -592,6 +641,7 @@ export class AppStack extends cdk.Stack {
             "POST",
             subscribeLambda,
             sharedValidator,
+            tokenAuthorizerRegularUser,
             requestTemplate().body("type").body("typeId").build(),
             api.addModel("SubscriptionModel", subscriptionModelOptions)
         );
@@ -604,6 +654,7 @@ export class AppStack extends cdk.Stack {
             "DELETE",
             unsubscribeLambda,
             sharedValidator,
+            tokenAuthorizerRegularUser,
             requestTemplate().path("type").path("typeId").build()
         );
 
@@ -613,6 +664,7 @@ export class AppStack extends cdk.Stack {
             "GET",
             getIsSubscribedLambda,
             sharedValidator,
+            tokenAuthorizerRegularUser,
             requestTemplate().path("type").path("typeId").build()
         );
 
@@ -621,7 +673,8 @@ export class AppStack extends cdk.Stack {
             subs,
             "GET",
             getSubscriptionsForUserLambda,
-            sharedValidator
+            sharedValidator,
+            tokenAuthorizerRegularUser
         );
 
         const emailNotificationLambda = new lambdaNode.NodejsFunction(

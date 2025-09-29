@@ -5,7 +5,8 @@ import {
     LambdaIntegration,
     PassthroughBehavior,
     MockIntegration,
-    IRequestValidator
+    IRequestValidator,
+    IAuthorizer
 } from "aws-cdk-lib/aws-apigateway";
 import { IFunction } from "aws-cdk-lib/aws-lambda";
 
@@ -20,6 +21,7 @@ export function addMethodWithLambda(
   httpMethod: "GET" | "PUT" | "POST" | "DELETE",
   lambda: IFunction,
   validator: IRequestValidator,
+  authorizer?: IAuthorizer,
   requestTemplate?: string,
   requestModel?: IModel,
 ) {
@@ -76,7 +78,8 @@ export function addMethodWithLambda(
         { statusCode: "409", responseParameters: { [ALLOW_ORIGIN_HEADER]: true } },
         { statusCode: "500", responseParameters: { [ALLOW_ORIGIN_HEADER]: true } },
       ],
-      requestValidator: validator
+      requestValidator: validator,
+      authorizer: authorizer,
     }
   );
 }
