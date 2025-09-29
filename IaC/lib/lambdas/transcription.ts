@@ -23,6 +23,9 @@ async function transcribeWithWhisper(filePath: string): Promise<string> {
 
 export const handler = async (event: any) => {
     try {
+        const apiKey = process.env.OPENAI_API_KEY;
+        if (!apiKey) throw new Error("Missing OpenAI API key");
+
         for (const record of event.Records) {
             const bucket = record.s3.bucket.name;
             const key = decodeURIComponent(record.s3.object.key.replace(/\+/g, " "));

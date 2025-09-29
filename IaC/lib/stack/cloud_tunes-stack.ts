@@ -174,6 +174,7 @@ export class AppStack extends cdk.Stack {
                 RATING_TABLE: ratingTable.tableName,
                 SUBSCRIPTION_TABLE: subscriptionTable.tableName,
                 USER_POOL_ID: userPool.userPoolId,
+                OPENAI_API_KEY: process.env.OPENAI_API_KEY!
             },
         });
 

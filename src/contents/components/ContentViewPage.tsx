@@ -116,6 +116,8 @@ export const ContentView: FC = () => {
         };
 
         fetchContent();
+        const interval = setInterval(fetchContent, 5000);
+        return () => clearInterval(interval);
     }, []);
 
     const toggleDownload = async () => {
@@ -698,6 +700,14 @@ export const ContentView: FC = () => {
                             onTimeUpdate={handleTimeUpdate}
                             onEnded={() => setIsPlaying(false)}
                         />
+                    )}
+
+                    {content?.transcriptionStatus === "PENDING" && <p>Transcription in progress...</p>}
+                    {content?.transcriptionStatus === "COMPLETED" && (
+                        <div>
+                        <h3>Transcript</h3>
+                        <p>{content?.lyrics}</p>
+                        </div>
                     )}
 
                     <div style={{ display: "flex", justifyContent: "center", gap: "1rem" }}>
