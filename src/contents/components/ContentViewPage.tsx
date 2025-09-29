@@ -87,7 +87,7 @@ export const ContentView: FC = () => {
             try {
                 const r = await getRatingByUser(contentId);
                 if (r) setRating(r.rating);
-
+              
             } catch {
                 // nothing
             }
@@ -561,35 +561,34 @@ export const ContentView: FC = () => {
     // ----- View Content part:
     return (
         <div>
-
             <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                 <button onClick={toggleDownload}>
                     {isDownloaded ? "Remove from offline" : "Download for offline"}
                 </button>
             </div>
             <div
-                style={{
-                    display: "flex",
-                    padding: "1.5rem",
-                    justifyContent: "center",
-                    alignItems: "center"
+            style={{
+                display: "flex",
+                padding: "1.5rem",
+                justifyContent: "center",
+                alignItems: "center"
                 }}
             >
                 {/* Left side - content info */}
                 <div style={{ flex: 1, textAlign: "center" }}>
                     <h2 style={{ margin: "0 0 0.5rem" }}>{content?.title}</h2>
                     <p style={{ margin: "0.3rem 0" }}>
-                        <strong>Album:</strong> {content?.albumName}
+                    <strong>Album:</strong> {content?.albumName}
                     </p>
                     <p style={{ margin: "0.3rem 0" }}>
-                        <strong>Genres:</strong> {content?.genres.join(", ")}
+                    <strong>Genres:</strong> {content?.genres.join(", ")}
                     </p>
                     <p style={{ margin: "0.3rem 0" }}>
-                        <strong>Filesize:</strong> {content?.filesize}
+                    <strong>Filesize:</strong> {content?.filesize}
                     </p>
                     <p style={{ margin: "0.3rem 0" }}>
-                        <strong>Uploaded:</strong>
-                        {content !== null ? new Date(content?.createdAt).toLocaleString() : new Date().toLocaleDateString()}
+                    <strong>Uploaded:</strong>
+                    {content !== null ? new Date(content?.createdAt).toLocaleString() : new Date().toLocaleDateString()}
                     </p>
 
                     {/* Edit, Delete and Rate Content buttons */}
@@ -648,7 +647,7 @@ export const ContentView: FC = () => {
                                             color: active ? "#fbbf24" : "#d1d5db",
                                         }}
                                     >
-                                        ★
+                                    ★
                                     </button>
                                 );
                             })}
@@ -701,19 +700,19 @@ export const ContentView: FC = () => {
                     )}
 
                     <div style={{ display: "flex", justifyContent: "center", gap: "1rem" }}>
-                        <button
-                            onClick={togglePlay}
-                            style={{
-                                background: "#1d4ed8",
-                                color: "#fff",
-                                border: "none",
-                                borderRadius: 8,
-                                padding: "0.5rem 1rem",
-                                cursor: "pointer",
-                            }}
-                        >
-                            {isPlaying ? "Pause" : "Play"}
-                        </button>
+                    <button
+                        onClick={togglePlay}
+                        style={{
+                        background: "#1d4ed8",
+                        color: "#fff",
+                        border: "none",
+                        borderRadius: 8,
+                        padding: "0.5rem 1rem",
+                        cursor: "pointer",
+                        }}
+                    >
+                        {isPlaying ? "Pause" : "Play"}
+                    </button>
                     </div>
 
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>

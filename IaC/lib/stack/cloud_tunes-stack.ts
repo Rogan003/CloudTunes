@@ -493,6 +493,30 @@ export class AppStack extends cdk.Stack {
             sharedValidator,
             requestTemplate().path("contentId").build()
         );
+        // PUT /contents/{contentId}
+        const editContentTmpl = requestTemplate()
+            .path("contentId")
+            .body("title")
+            .body("imageUrl")
+            .body("albumId")
+            .body("albumName")
+            .body("genres")
+            .body("artistIds")
+            .body("fileBase64")
+            .build();
+        addMethodWithLambda(
+            singleContent,
+            "PUT",
+            editContentLambda,
+            editContentTmpl
+        );
+        // DELETE /contents/{contentId}
+        addMethodWithLambda(
+            singleContent,
+            "DELETE",
+            deleteContentLambda,
+            requestTemplate().path("contentId").build()
+        );
 
         // GET /contents/artist/{artistId}
         const contentsByArtist = contents.addResource("artist").addResource("{artistId}");
