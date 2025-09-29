@@ -1,0 +1,9 @@
+{
+  "name": "whisper-lambda",
+  "version": "1.0.0",
+  "description": "Whisper inside AWS Lambda",
+  "main": "index.js",
+  "dependencies": {
+    "whisper-node": "^1.0.0"
+  }
+}

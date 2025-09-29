@@ -79,7 +79,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event: any) => {
             genres: item.genres?.SS ?? [],
             artistIds: item.artistIds?.SS ?? [],
             fileUrl: presignedUrl, // frontend can play or download
-            transcirptionStatus: item.transcirptionStatus.S,
+            transcriptionStatus: item.transcriptionStatus.S,
             lyrics: item.lyrics.S
         };
 

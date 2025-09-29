@@ -6,6 +6,7 @@ import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as iam from "aws-cdk-lib/aws-iam";
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import * as s3 from 'aws-cdk-lib/aws-s3';
+import * as s3n from "aws-cdk-lib/aws-s3-notifications";
 import { RestApi } from 'aws-cdk-lib/aws-apigateway';
 import { addCorsOptions, addMethodWithLambda } from '../utils/methodUtils';
 import { requestTemplate } from '../utils/requestTemplate';
@@ -129,13 +130,13 @@ export class AppStack extends cdk.Stack {
         });
 
         // Subscription Table
-        const subscriptionTable = new dynamodb.Table(this, "Subscriptions", {
-            tableName: "Subscriptions",
-            partitionKey: { name: "userId", type: dynamodb.AttributeType.STRING },
-            sortKey: { name: "SK", type: dynamodb.AttributeType.STRING },
-            billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
-            removalPolicy: cdk.RemovalPolicy.DESTROY,
-        });
+        // const subscriptionTable = new dynamodb.Table(this, "Subscriptions", {
+        //     tableName: "Subscriptions",
+        //     partitionKey: { name: "userId", type: dynamodb.AttributeType.STRING },
+        //     sortKey: { name: "SK", type: dynamodb.AttributeType.STRING },
+        //     billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+        //     removalPolicy: cdk.RemovalPolicy.DESTROY,
+        // });
 
         const contentBucket = new s3.Bucket(this, "ContentBucket", {
             bucketName: `cloudtunes-content-${cdk.Aws.ACCOUNT_ID}-${cdk.Aws.REGION}`,
@@ -172,9 +173,8 @@ export class AppStack extends cdk.Stack {
                 GENRES_TABLE: genresTable.tableName,
                 CONTENT_ARTIST_TABLE: contentArtistMap.tableName,
                 RATING_TABLE: ratingTable.tableName,
-                SUBSCRIPTION_TABLE: subscriptionTable.tableName,
-                USER_POOL_ID: userPool.userPoolId,
-                OPENAI_API_KEY: process.env.OPENAI_API_KEY!
+                // SUBSCRIPTION_TABLE: subscriptionTable.tableName,
+                USER_POOL_ID: userPool.userPoolId
             },
         });
 
@@ -302,20 +302,30 @@ export class AppStack extends cdk.Stack {
         ratingTable.grantReadData(getRatingsByContentLambda);
         ratingTable.grantReadData(getRatingByUserLambda);
 
-        const subscribeLambda = new lambdaNode.NodejsFunction(
-            this,
-            "subscribe",
-            commonLambdaProps("lib/lambdas/subscribe.ts")
-        );
-        subscriptionTable.grantReadWriteData(subscribeLambda);
+        // const subscribeLambda = new lambdaNode.NodejsFunction(
+        //     this,
+        //     "subscribe",
+        //     commonLambdaProps("lib/lambdas/subscribe.ts")
+        // );
+        // subscriptionTable.grantReadWriteData(subscribeLambda);
 
-        const transcriptionLambda = new lambdaNode.NodejsFunction(
-            this,
-            "transcription",
-            commonLambdaProps("lib/lambdas/transcription.ts")
+        // const transcriptionLambda = new lambdaNode.NodejsFunction(
+        //     this,
+        //     "transcription",
+        //     commonLambdaProps("lib/lambdas/transcription.ts", 30)
+        // );
+        const whisperLambda = new lambda.DockerImageFunction(this, "WhisperLambda", {
+            code: lambda.DockerImageCode.fromImageAsset("lib/whisper-lambda"),
+            memorySize: 2048,
+            timeout: cdk.Duration.minutes(1),
+        });
+        contentTable.grantReadWriteData(whisperLambda);
+        contentBucket.grantRead(whisperLambda);
+        contentBucket.addEventNotification(
+            s3.EventType.OBJECT_CREATED,
+            new s3n.LambdaDestination(whisperLambda),
+            { prefix: "audio/" }
         );
-        contentTable.grantReadWriteData(transcriptionLambda);
-        contentBucket.grantRead(transcriptionLambda);
 
         // API Gateway
         const api = new RestApi(this, "cloudtunes-api");
@@ -496,15 +506,15 @@ export class AppStack extends cdk.Stack {
         );
 
         // POST /subscriptions
-        const subs = api.root.addResource("subscriptions");
-        addCorsOptions(subs, ["POST"]);
-        addMethodWithLambda(
-            subs,
-            "POST",
-            subscribeLambda,
-            requestTemplate().body("userId").body("type").body("targetId").build(),
-            api.addModel("SubscriptionModel", subscriptionModelOptions)
-        );
+        // const subs = api.root.addResource("subscriptions");
+        // addCorsOptions(subs, ["POST"]);
+        // addMethodWithLambda(
+        //     subs,
+        //     "POST",
+        //     subscribeLambda,
+        //     requestTemplate().body("userId").body("type").body("targetId").build(),
+        //     api.addModel("SubscriptionModel", subscriptionModelOptions)
+        // );
 
         // Outputs
         new cdk.CfnOutput(this, "ContentTableName", { value: contentTable.tableName });
@@ -512,7 +522,7 @@ export class AppStack extends cdk.Stack {
         new cdk.CfnOutput(this, "GenresTableName", { value: genresTable.tableName });
         new cdk.CfnOutput(this, "ContentArtistMapName", { value: contentArtistMap.tableName });
         new cdk.CfnOutput(this, "RatingTableName", { value: ratingTable.tableName });
-        new cdk.CfnOutput(this, "SubscriptionTableName", { value: subscriptionTable.tableName });
+        // new cdk.CfnOutput(this, "SubscriptionTableName", { value: subscriptionTable.tableName });
         new cdk.CfnOutput(this, "ContentBucketName", { value: contentBucket.bucketName });
         new cdk.CfnOutput(this, "ApiUrl", { value: api.url });
     }

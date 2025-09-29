@@ -15,6 +15,10 @@ export const ContentView: FC = () => {
     const [progress, setProgress] = useState(0);
     const [isDownloaded, setIsDownloaded] = useState(false);
 
+    // ----- Transcription part:
+    const [lyrics, setLyrics] = useState<string>("");
+    const [transcriptionStatus, setTranscriptionStatus] = useState<string>("PENDING");
+
     // ----- Edit Content part:
     const [isEditing, setIsEditing] = useState(false);
     const [title, setTitle] = useState<string>("");
@@ -108,6 +112,8 @@ export const ContentView: FC = () => {
 
                 const content: GetContentResponse = await getContent(contentId);
                 setContent(content);
+                setLyrics(content.lyrics || "");
+                setTranscriptionStatus(content.transcriptionStatus);
                 if (!audioFileUrl) setAudioFileUrl(content.fileUrl);
 
             } catch (err: any) {
@@ -116,9 +122,24 @@ export const ContentView: FC = () => {
         };
 
         fetchContent();
-        const interval = setInterval(fetchContent, 5000);
-        return () => clearInterval(interval);
     }, []);
+
+    // ----- Transcription part:
+    useEffect(() => {
+        if (!contentId) return;
+        if (!!content && transcriptionStatus === "COMPLETED" && lyrics !== "") return;
+        const interval = setInterval(async () => {
+            try {
+                const updated = await getContent(contentId);
+                setLyrics(updated.lyrics || "");
+                setTranscriptionStatus(updated.transcriptionStatus);
+            } catch (err) {
+                console.error("Polling failed:", err);
+            }
+        }, 5000); // every 5 seconds
+
+        return () => clearInterval(interval);
+    }, [contentId]);
 
     const toggleDownload = async () => {
         if (!content) return;
@@ -706,7 +727,7 @@ export const ContentView: FC = () => {
                     {content?.transcriptionStatus === "COMPLETED" && (
                         <div>
                         <h3>Transcript</h3>
-                        <p>{content?.lyrics}</p>
+                        <p>{lyrics}</p>
                         </div>
                     )}
 
