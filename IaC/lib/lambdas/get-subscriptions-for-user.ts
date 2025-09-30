@@ -38,7 +38,10 @@ export const handler: Handler<SubscriptionCard[]> = async (event: any) => {
                 if (type == "ARTIST") {
                     const { Item } = await client.send(new GetItemCommand({
                         TableName: artistTable,
-                        Key: { artistId: { S: id } },
+                        Key: {
+                            artistId: { S: id },
+                            itemKey: { S: id }
+                        },
                     }));
                     if (!Item) continue;
 
@@ -51,8 +54,8 @@ export const handler: Handler<SubscriptionCard[]> = async (event: any) => {
                     const { Item } = await client.send(new GetItemCommand({
                         TableName: contentTable,
                         Key: {
-                            contentId: { S: "ALBUMS" },
-                            sortKey: { S: `${id}` }
+                            contentId: { S: "Albums" },
+                            sortKey: { S: id }
                         }
                     }));
                     if (!Item) continue;
