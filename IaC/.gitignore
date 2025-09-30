@@ -2,8 +2,10 @@
 !jest.config.js
 *.d.ts
 node_modules
-models
 
 # CDK asset staging directory
 .cdk.staging
 cdk.out
+
+whisper-lambda/models
+whisper-lambda/whisper.cpp

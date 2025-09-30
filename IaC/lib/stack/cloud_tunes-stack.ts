@@ -11,6 +11,7 @@ import { RestApi } from 'aws-cdk-lib/aws-apigateway';
 import { addCorsOptions, addMethodWithLambda } from '../utils/methodUtils';
 import { requestTemplate } from '../utils/requestTemplate';
 import { createArtistModelOptions, uploadContentModelOptions, ratingModelOptions, subscriptionModelOptions} from "../models/model-options";
+import path from 'path';
 
 export class AppStack extends cdk.Stack {
     constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -315,9 +316,14 @@ export class AppStack extends cdk.Stack {
         //     commonLambdaProps("lib/lambdas/transcription.ts", 30)
         // );
         const whisperLambda = new lambda.DockerImageFunction(this, "WhisperLambda", {
-            code: lambda.DockerImageCode.fromImageAsset("lib/whisper-lambda"),
-            memorySize: 2048,
-            timeout: cdk.Duration.minutes(1),
+            code: lambda.DockerImageCode.fromImageAsset(
+                path.join(__dirname, "../../whisper-lambda")
+            ),
+            memorySize: 3000, // Whisper needs >2GB
+            timeout: cdk.Duration.minutes(15),
+            environment: {
+                CONTENT_TABLE: contentTable.tableName,
+            },
         });
         contentTable.grantReadWriteData(whisperLambda);
         contentBucket.grantRead(whisperLambda);
