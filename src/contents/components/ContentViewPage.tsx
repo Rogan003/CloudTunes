@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import {deleteContent, editContent, getAllAlbums, getAllArtists, getContent, getRatingByUser, rateContent} from "../service/content-service";
 import type { GetContentResponse } from "../models/aws-calls";
 import { getFromCache, removeFromCache, saveToCache } from "../service/cache-service";
+import { AuthService } from "../../users/services/auth-service";
 
 export const ContentView: FC = () => {
     const { contentId } = useParams();
@@ -14,6 +15,7 @@ export const ContentView: FC = () => {
     const [isPlaying, setIsPlaying] = useState(false);
     const [progress, setProgress] = useState(0);
     const [isDownloaded, setIsDownloaded] = useState(false);
+    const isUser = AuthService.hasRole("user");
 
     // ----- Transcription part:
     const [lyrics, setLyrics] = useState<string>("");
@@ -91,7 +93,7 @@ export const ContentView: FC = () => {
             try {
                 const r = await getRatingByUser(contentId);
                 if (r) setRating(r.rating);
-
+              
             } catch {
                 // nothing
             }
@@ -584,7 +586,6 @@ export const ContentView: FC = () => {
     // ----- View Content part:
     return (
         <div>
-
             <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                 <button onClick={toggleDownload}>
                     {isDownloaded ? "Remove from offline" : "Download for offline"}
@@ -649,6 +650,7 @@ export const ContentView: FC = () => {
                     </div>
 
                     {/* Ratings */}
+                    {isUser && (
                     <div style={{ marginTop: 16, display: "grid", gap: 8, placeItems: "center" }}>
                         <div style={{ fontWeight: 600 }}>Rate this song</div>
                         <div style={{ display: "flex", gap: 6 }}>
@@ -695,6 +697,7 @@ export const ContentView: FC = () => {
                             </button>
                         </div>
                     </div>
+                    )}
                 </div>
 
                 {/* Right side - image and player */}

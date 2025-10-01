@@ -2,11 +2,12 @@ import React, {type CSSProperties, useEffect, useMemo, useState} from "react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "../../shared/components/Card";
 import { Pagination } from "../../shared/components/Pagination";
-import { BackButton } from "../../shared/components/BackButton";
+import {BackButton, NegativeButton, PositiveButton} from "../../shared/components/buttons.tsx";
 import { Grid } from "../../shared/components/Grid";
 import { Section } from "../../shared/components/Section";
 import type {AlbumCard, ArtistCard} from "../models/music-models.ts";
 import {getAlbumsForGenre, getArtistsForGenre, getGenres} from "../services/genres-service.ts";
+import {getIsSubscribed, subscribe, unsubscribe} from "../services/subscription-service.ts";
 
 export const DiscoverPage: React.FC = () => {
   const navigate = useNavigate();
@@ -16,25 +17,26 @@ export const DiscoverPage: React.FC = () => {
   const [artists, setArtists] = useState<ArtistCard[]>([]);
   const [albumPage, setAlbumPage] = useState(1);
   const [artistPage, setArtistPage] = useState(1);
+  const [isSubscribed, setIsSubscribed] = useState(false);
   const pageSize = 6;
 
-    useEffect(() => {
-        const fetchGenres = async () => {
-            try {
-                const genres: string[] = await getGenres();
-                setGenres(genres);
+  useEffect(() => {
+      const fetchGenres = async () => {
+          try {
+              const genres: string[] = await getGenres();
+              setGenres(genres);
 
-                if (genres.length > 0) {
-                    setSelectedGenre(genres[0]);
-                }
-            } catch (err: any) {
-                console.log(err)
-                alert("An error occurred while fetching genres: " + err.message);
-            }
-        };
+              if (genres.length > 0) {
+                  setSelectedGenre(genres[0]);
+              }
+          } catch (err: any) {
+              console.log(err)
+              alert("An error occurred while fetching genres: " + err.message);
+          }
+      };
 
-        fetchGenres();
-    }, []);
+      fetchGenres();
+  }, []);
 
   const loadForGenre = async () => {
       if (!selectedGenre) return;
@@ -57,6 +59,7 @@ export const DiscoverPage: React.FC = () => {
 
       setAlbums(albums);
       setArtists(artists);
+      getIsSubscribed("genre", selectedGenre).then(setIsSubscribed);
   }
 
   useEffect(() => {
@@ -66,12 +69,36 @@ export const DiscoverPage: React.FC = () => {
   const albumPageItems = useMemo(() => paginate(albums, albumPage, pageSize), [albums, albumPage]);
   const artistPageItems = useMemo(() => paginate(artists, artistPage, pageSize), [artists, artistPage]);
 
+  const subscribeGenre = () => {
+      if (!selectedGenre) return;
+
+      subscribe("genre", selectedGenre).then(() => {
+          setIsSubscribed(true);
+      });
+  }
+
+  const unsubscribeGenre = () => {
+      if (!selectedGenre) return;
+
+      unsubscribe("genre", selectedGenre).then(() => {
+          setIsSubscribed(false);
+      });
+  }
+
   return (
     <div style={pageWrap}>
       <div style={headerRow}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <BackButton />
           <h2 style={{ margin: 0 }}>Discover Music</h2>
+          {
+              selectedGenre &&
+              (
+                  isSubscribed ?
+                      <NegativeButton label = "Unsubscribe" onClick = {unsubscribeGenre} /> :
+                      <PositiveButton label = "Subscribe" onClick = {subscribeGenre} />
+              )
+          }
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <label htmlFor="genre">Genre:</label>
