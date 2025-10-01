@@ -29,7 +29,7 @@ export async function register(user: User): Promise<RegisterResponse> {
     }
 
     try {
-        await initFeed();
+        await initFeed(response.UserSub);
     } catch (error) {
         console.error("Failed to initialize feed:", error);
     }

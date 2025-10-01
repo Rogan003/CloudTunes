@@ -1,8 +1,8 @@
 import {DynamoDBClient, ScanCommand, QueryCommand, PutItemCommand, DeleteItemCommand,
 } from "@aws-sdk/client-dynamodb";
 import { Handler } from "aws-lambda";
-import { JwtPayload } from "jwt-decode";
-import jwt from "jsonwebtoken";
+//import { JwtPayload } from "jwt-decode";
+//import jwt from "jsonwebtoken";
 
 const client = new DynamoDBClient({});
 const CONTENT_TABLE = process.env.CONTENT_TABLE!;
@@ -10,14 +10,12 @@ const FEED_TABLE = process.env.FEED_TABLE!;
 
 export const handler: Handler = async (event) => {
     try {
-        const token = event.headers.Authorization?.split(" ")[1];
-        if (!token) throw new Error("No token provided");
+        const body = event.body ? JSON.parse(event.body) : {};
+        const userId = body.userId;
 
-        const decoded = jwt.decode(token) as JwtPayload | null;
-        if (!decoded) throw new Error("Invalid token");
-
-        const userId = (decoded as any)["sub"];
-        if (!userId) throw new Error("No userId in token");
+        if (!userId) {
+            return json(400, { message: "userId is required in request body" });
+        }
 
         const limit = 10;
 

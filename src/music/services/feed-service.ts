@@ -1,4 +1,5 @@
 import { apiFetch, API_BASE_URL } from "../../shared/api";
+//import {TokenStorage} from "../../users/services/user-token-storage-service.ts";
 
 export interface FeedItem {
     contentId: string;
@@ -14,9 +15,15 @@ export interface FeedResponse {
     items: FeedItem[];
 }
 
-export async function initFeed(): Promise<FeedResponse> {
+export async function initFeed(userId?: string): Promise<FeedResponse> {
+    if (!userId) {
+        throw new Error("User not authenticated");
+    }
+
     const response = await apiFetch(`${API_BASE_URL}/feed/init`, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId }),
     });
 
     if (!response.ok) {

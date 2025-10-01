@@ -5,7 +5,7 @@ import {
 } from "@aws-sdk/client-cognito-identity-provider";
 import {REGION, USER_POOL_CLIENT_ID} from "../../shared/aws-consts.ts";
 import type {LoginResponse} from "../models/aws-calls.ts";
-import {initFeed} from "../../music/services/feed-service.ts";
+//import {initFeed} from "../../music/services/feed-service.ts";
 
 const client = new CognitoIdentityProviderClient({ region: REGION });
 
@@ -27,11 +27,12 @@ export async function login(usernameOrEmail: string, password: string): Promise<
 
     const { IdToken, AccessToken, RefreshToken, ExpiresIn } = response.AuthenticationResult;
 
+    /*
     try {
         await initFeed();
     } catch (error) {
         console.error("Failed to initialize feed:", error);
-    }
+    }*/
 
     return {
         idToken: IdToken!,

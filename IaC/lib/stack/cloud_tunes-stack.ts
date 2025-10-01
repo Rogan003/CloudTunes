@@ -902,8 +902,7 @@ export class AppStack extends cdk.Stack {
             feedInit,
             "POST",
             initFeedLambda,
-            sharedValidator,
-            tokenAuthorizerRegularUser
+            sharedValidator
         );
 
         // POST /feed/update - Manually update feed based on user action
