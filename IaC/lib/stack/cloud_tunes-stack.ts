@@ -310,11 +310,6 @@ export class AppStack extends cdk.Stack {
         // );
         // subscriptionTable.grantReadWriteData(subscribeLambda);
 
-        // const transcriptionLambda = new lambdaNode.NodejsFunction(
-        //     this,
-        //     "transcription",
-        //     commonLambdaProps("lib/lambdas/transcription.ts", 30)
-        // );
         const whisperLambda = new lambda.DockerImageFunction(this, "WhisperLambda", {
             code: lambda.DockerImageCode.fromImageAsset(
                 path.join(__dirname, "../../whisper-lambda")
