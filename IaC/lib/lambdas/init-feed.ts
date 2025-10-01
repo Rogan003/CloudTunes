@@ -30,6 +30,12 @@ export const handler: Handler = async (event) => {
 
         let items = scan.Items ?? [];
 
+        items = items.filter(it => {
+            const contentId = it.contentId?.S;
+            const sortKey = it.sortKey?.S;
+            return contentId && sortKey && contentId === sortKey;
+        });
+
         if (items.length > limit) {
             // shuffle
             items = items.sort(() => Math.random() - 0.5).slice(0, limit);

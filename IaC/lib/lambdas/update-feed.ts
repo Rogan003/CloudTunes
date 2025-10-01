@@ -156,6 +156,8 @@ export const handler: Handler = async (event) => {
         function addBoost(contentId: string, boost: number) {
             if (!contentId) return;
             candidateScores[contentId] = (candidateScores[contentId] || 0) + boost;
+            console.log(`Boosting ${contentId} by ${boost}`);
+            console.log(`Total boost for ${contentId}: ${candidateScores[contentId]}`);
         }
 
         // --- CASE: rate ---
@@ -343,6 +345,12 @@ export const handler: Handler = async (event) => {
 
             let items = scan.Items ?? [];
 
+            items = items.filter(it => {
+                const contentId = it.contentId?.S;
+                const sortKey = it.sortKey?.S;
+                return contentId && sortKey && contentId === sortKey;
+            });
+
             if (items.length > limit) {
                 // shuffle
                 items = items.sort(() => Math.random() - 0.5).slice(0, limit);
@@ -407,6 +415,19 @@ export const handler: Handler = async (event) => {
             .sort((a, b) => b.score - a.score)
             .slice(0, 10);
 
+        // delete ALL existing feed entries for this user first
+        const existingFeedItems = await readCurrentFeed(userId);
+        for (const item of existingFeedItems) {
+            await client.send(new DeleteItemCommand({
+                TableName: FEED_TABLE,
+                Key: {
+                    userId: { S: userId },
+                    rankKey: { S: item.rankKey.S! }
+                }
+            }));
+        }
+
+        // insert the new top 10
         for (const r of ranked) {
             await client.send(new PutItemCommand({
                 TableName: FEED_TABLE,
@@ -419,17 +440,6 @@ export const handler: Handler = async (event) => {
             }));
         }
 
-        // delete any items beyond top 10
-        const postQuery = await readCurrentFeed(userId);
-        if (postQuery.length > 10) {
-            const extras = postQuery.slice(10);
-            for (const ex of extras) {
-                await client.send(new DeleteItemCommand({
-                    TableName: FEED_TABLE,
-                    Key: { userId: { S: userId }, rankKey: { S: ex.rankKey.S! } }
-                }));
-            }
-        }
 
         return json(200, {
             updated: ranked.map(r => ({ contentId: r.contentId, score: r.score }))

@@ -27,16 +27,23 @@ export const handler: Handler = async (event) => {
                 TableName: FEED_TABLE,
                 KeyConditionExpression: "userId = :uid",
                 ExpressionAttributeValues: { ":uid": { S: userId } },
-                Limit: limit,
                 ScanIndexForward: false,
             })
         );
 
         const feedItems = [];
+        const seenContentIds = new Set<string>(); // Add this to track seen IDs
 
         if (Items) {
             for (const item of Items) {
                 const contentId = item.contentId.S!;
+
+                // Skip if already seen
+                if (seenContentIds.has(contentId)) {
+                    continue;
+                }
+                seenContentIds.add(contentId);
+
                 const score = item.score?.N ? parseFloat(item.score.N) : 0;
 
                 const { Item: contentItem } = await client.send(
@@ -59,6 +66,11 @@ export const handler: Handler = async (event) => {
                         artistIds: contentItem.artistIds?.SS || [],
                         genres: contentItem.genres?.SS || [],
                     });
+                }
+
+                // Stop once we have enough unique items
+                if (feedItems.length >= limit) {
+                    break;
                 }
             }
         }
