@@ -6,6 +6,7 @@ import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as iam from "aws-cdk-lib/aws-iam";
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import * as s3 from 'aws-cdk-lib/aws-s3';
+import * as s3n from "aws-cdk-lib/aws-s3-notifications";
 import * as sqs from "aws-cdk-lib/aws-sqs";
 import * as eventSources from "aws-cdk-lib/aws-lambda-event-sources";
 import * as ses from "aws-cdk-lib/aws-ses";
@@ -13,6 +14,7 @@ import {RequestValidator, RestApi, TokenAuthorizer} from 'aws-cdk-lib/aws-apigat
 import { addCorsOptions, addMethodWithLambda } from '../utils/methodUtils';
 import { requestTemplate } from '../utils/requestTemplate';
 import { createArtistModelOptions, uploadContentModelOptions, ratingModelOptions, subscriptionModelOptions} from "../models/model-options";
+import path from 'path';
 
 export class AppStack extends cdk.Stack {
     constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -337,6 +339,24 @@ export class AppStack extends cdk.Stack {
             commonLambdaProps("lib/lambdas/subscribe.ts")
         );
         subscriptionTable.grantReadWriteData(subscribeLambda);
+
+        const whisperLambda = new lambda.DockerImageFunction(this, "WhisperLambda", {
+            code: lambda.DockerImageCode.fromImageAsset(
+                path.join(__dirname, "../../whisper-lambda")
+            ),
+            memorySize: 3000, // Whisper needs >2GB
+            timeout: cdk.Duration.minutes(15),
+            environment: {
+                CONTENT_TABLE: contentTable.tableName,
+            },
+        });
+        contentTable.grantReadWriteData(whisperLambda);
+        contentBucket.grantRead(whisperLambda);
+        contentBucket.addEventNotification(
+            s3.EventType.OBJECT_CREATED,
+            new s3n.LambdaDestination(whisperLambda),
+            { prefix: "audio/" }
+        );
 
         const unsubscribeLambda = new lambdaNode.NodejsFunction(
             this,

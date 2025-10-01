@@ -1,0 +1,16 @@
+{
+  "name": "whisper-lambda",
+  "version": "1.0.0",
+  "description": "Lambda function for Whisper transcription",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "shelljs": "^0.8.5"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3",
+    "@types/node": "^20.5.0"
+  }
+}

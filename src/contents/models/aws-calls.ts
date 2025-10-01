@@ -19,6 +19,8 @@ export interface UploadContentResponse {
     createdAt: string;
     updatedAt: string;
     audioS3Key: string;
+    transcriptionStatus: string;
+    lyrics: string;
 }
 
 export interface GetContentResponse {
@@ -35,4 +37,6 @@ export interface GetContentResponse {
     genres: string[];
     artistIds: string[];
     fileUrl: string;
+    transcriptionStatus: string;
+    lyrics: string;
 }

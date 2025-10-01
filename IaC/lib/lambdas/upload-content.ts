@@ -119,6 +119,8 @@ export const handler: Handler<Content> = async (event: any) => {
             genres:    { SS: genres },
             artistIds: { SS: artistIds },
             audioS3Key: { S: audioS3Key },
+            transcriptionStatus: { S: "PENDING" },
+            lyrics: { S: "" }
         };
         if (finalAlbumId) {
             contentItem.albumId = { S: finalAlbumId };
@@ -247,6 +249,8 @@ export const handler: Handler<Content> = async (event: any) => {
                 createdAt: now,
                 updatedAt: now,
                 audioS3Key,
+                transcriptionStatus: "PENDING",
+                lyrics: ""
             }),
         };
 
