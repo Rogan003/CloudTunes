@@ -12,6 +12,7 @@ import { SubscriptionsPage } from "./music/components/SubscriptionsPage";
 import {UploadContent} from "./contents/components/UploadContent.tsx";
 import { ContentView } from './contents/components/ContentViewPage.tsx';
 import { RequireAuth, RequireGuest, RequireRole } from './shared/guards';
+import {UploadSongsAlbum} from "./contents/components/UploadSongsAlbum.tsx";
 
 function App() {
     return (
@@ -27,6 +28,7 @@ function App() {
                 <Route path="/albums/:albumId" element={<RequireRole role="user"><AlbumSongsPage /></RequireRole>} />
                 <Route path="/subscriptions" element={<RequireRole role="user"><SubscriptionsPage /></RequireRole>} />
                 <Route path="/upload-content" element={<RequireRole role="admin"><UploadContent/></RequireRole>} />
+                <Route path="/upload-songs-album" element={<RequireRole role="admin"><UploadSongsAlbum/></RequireRole>} />
                 <Route path="/songs/:contentId" element={<RequireAuth><ContentView/></RequireAuth>} />
             </Routes>
         </BrowserRouter>

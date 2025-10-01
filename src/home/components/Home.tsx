@@ -46,6 +46,10 @@ export const Home = () => {
         navigate("/upload-content")
     }
 
+    const uploadSongsAlbum = () => {
+        navigate("/upload-songs-album")
+    }
+
     const seeSubscriptions = () => {
         navigate("/subscriptions")
     }
@@ -171,6 +175,7 @@ export const Home = () => {
                 <button onClick={() => logout()}>Logout</button>
                 {isAdmin && <button onClick={() => createArtist()}>Create Artist</button>}
                 {isAdmin && <button onClick={() => uploadContent()}>Upload Content</button>}
+                {isAdmin && <button onClick={() => uploadSongsAlbum()}>Upload Whole Album</button>}
                 {isUser && <button onClick={() => seeSubscriptions()}>My Subscriptions</button>}
                 {isUser && <button onClick={() => discoverContent()}>Discover</button>}
             </div>
