@@ -16,6 +16,7 @@ export const ContentView: FC = () => {
     const [progress, setProgress] = useState(0);
     const [isDownloaded, setIsDownloaded] = useState(false);
     const isUser = AuthService.hasRole("user");
+    const isAdmin = AuthService.hasRole("admin");
 
     // ----- Edit Content part:
     const [isEditing, setIsEditing] = useState(false);
@@ -601,37 +602,39 @@ export const ContentView: FC = () => {
                     </p>
 
                     {/* Edit, Delete and Rate Content buttons */}
-                    <div style={{ marginTop: 12, display: "flex", justifyContent: "center", gap: 12, flexWrap: "wrap" }}>
-                        <button
-                            type="button"
-                            onClick={onEditStart}
-                            style={{
-                                background: "#10b981",
-                                color: "#fff",
-                                border: "none",
-                                borderRadius: 8,
-                                padding: "0.5rem 1rem",
-                                cursor: "pointer",
-                            }}
-                        >
-                            Edit
-                        </button>
+                    {isAdmin && (
+                        <div style={{ marginTop: 12, display: "flex", justifyContent: "center", gap: 12, flexWrap: "wrap" }}>
+                            <button
+                                type="button"
+                                onClick={onEditStart}
+                                style={{
+                                    background: "#10b981",
+                                    color: "#fff",
+                                    border: "none",
+                                    borderRadius: 8,
+                                    padding: "0.5rem 1rem",
+                                    cursor: "pointer",
+                                }}
+                            >
+                                Edit
+                            </button>
 
-                        <button
-                            type="button"
-                            onClick={onDelete}
-                            style={{
-                                background: "#ef4444",
-                                color: "#fff",
-                                border: "none",
-                                borderRadius: 8,
-                                padding: "0.5rem 1rem",
-                                cursor: "pointer",
-                            }}
-                        >
-                            Delete
-                        </button>
-                    </div>
+                            <button
+                                type="button"
+                                onClick={onDelete}
+                                style={{
+                                    background: "#ef4444",
+                                    color: "#fff",
+                                    border: "none",
+                                    borderRadius: 8,
+                                    padding: "0.5rem 1rem",
+                                    cursor: "pointer",
+                                }}
+                            >
+                                Delete
+                            </button>
+                        </div>
+                    )}
 
                     {/* Ratings */}
                     {isUser && (

@@ -225,10 +225,10 @@ export class AppStack extends cdk.Stack {
 
         const feedUpdateQueue = new sqs.Queue(this, "FeedUpdateQueue", {
             queueName: "feed-update-queue",
-            visibilityTimeout: cdk.Duration.seconds(300), // 5 min
+            visibilityTimeout: cdk.Duration.seconds(60), // 5 min
             retentionPeriod: cdk.Duration.days(1),
             deadLetterQueue: {
-                maxReceiveCount: 3,
+                maxReceiveCount: 5,
                 queue: feedUpdateDLQ,
             },
         });
@@ -509,6 +509,14 @@ export class AppStack extends cdk.Stack {
         listensTable.grantReadData(uploadContentUpdateFeedLambda);
         feedTable.grantReadWriteData(uploadContentUpdateFeedLambda);
         feedUpdateQueue.grantConsumeMessages(uploadContentUpdateFeedLambda);
+
+        // Grant permission to query Cognito users
+        uploadContentUpdateFeedLambda.addToRolePolicy(
+            new iam.PolicyStatement({
+                actions: ["cognito-idp:ListUsers"],
+                resources: [userPool.userPoolArn],
+            })
+        );
 
         // Trigger uploadContentUpdateFeedLambda from SQS
         uploadContentUpdateFeedLambda.addEventSource(

@@ -82,7 +82,7 @@ export const handler: Handler = async (event) => {
                 "Access-Control-Allow-Credentials": "false",
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify({ items: feedItems }),
+            body: JSON.stringify({ items: feedItems.reverse() }),
         };
 
     } catch (err: unknown) {

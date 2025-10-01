@@ -1,10 +1,56 @@
-import {DynamoDBClient, QueryCommand, PutItemCommand, DeleteItemCommand} from "@aws-sdk/client-dynamodb";
+import {
+    DynamoDBClient,
+    QueryCommand,
+    PutItemCommand,
+    DeleteItemCommand,
+    GetItemCommand
+} from "@aws-sdk/client-dynamodb";
 import { SQSHandler } from "aws-lambda";
+import {CognitoIdentityProviderClient, ListUsersCommand} from "@aws-sdk/client-cognito-identity-provider";
 
 const client = new DynamoDBClient({});
+const cognito = new CognitoIdentityProviderClient({});
 const SUBSCRIPTIONS_TABLE = process.env.SUBSCRIPTION_TABLE!;
 const LISTENS_TABLE = process.env.LISTENS_TABLE!;
 const FEED_TABLE = process.env.FEED_TABLE!;
+const CONTENT_TABLE = process.env.CONTENT_TABLE!;
+const USER_POOL_ID = process.env.USER_POOL_ID!;
+
+const emailToUserIdCache: Map<string, string> = new Map();
+
+async function getUserIdFromEmail(email: string): Promise<string | null> {
+    if (emailToUserIdCache.has(email)) {
+        return emailToUserIdCache.get(email)!;
+    }
+
+    try {
+        const response = await cognito.send(new ListUsersCommand({
+            UserPoolId: USER_POOL_ID,
+            Filter: `email = "${email}"`,
+            Limit: 1,
+        }));
+
+        if (response.Users && response.Users.length > 0) {
+            const user = response.Users[0];
+
+            const subAttr = user.Attributes?.find(attr => attr.Name === 'sub');
+            const userId = subAttr?.Value;
+
+            if (!userId) {
+                console.error(`No sub found for user with email ${email}`);
+                return null;
+            }
+
+            emailToUserIdCache.set(email, userId);
+            return userId;
+        }
+
+    } catch (error) {
+        console.error(`Failed to get userId for email ${email}:`, error);
+    }
+
+    return null;
+}
 
 async function readCurrentFeed(userId: string) {
     const res = await client.send(
@@ -40,9 +86,10 @@ export const handler: SQSHandler = async (event) => {
             }));
 
             Items?.forEach(i => {
-                const u = i.userId.S!;
-                userBoosts.set(u, (userBoosts.get(u) ?? 0) + 400);
+                const userEmail = i.userEmail.S!;
+                userBoosts.set(userEmail, (userBoosts.get(userEmail) ?? 0) + 400);
             });
+
         }
 
         // query subscriptions per genre
@@ -55,8 +102,8 @@ export const handler: SQSHandler = async (event) => {
             }));
 
             Items?.forEach(i => {
-                const u = i.userId.S!;
-                userBoosts.set(u, (userBoosts.get(u) ?? 0) + 200);
+                const userEmail = i.userEmail.S!;
+                userBoosts.set(userEmail, (userBoosts.get(userEmail) ?? 0) + 200);
             });
         }
 
@@ -70,14 +117,23 @@ export const handler: SQSHandler = async (event) => {
             }));
 
             Items?.forEach(i => {
-                const u = i.userId.S!;
-                userBoosts.set(u, (userBoosts.get(u) ?? 0) + 300);
+                const userEmail = i.userEmail.S!;
+                userBoosts.set(userEmail, (userBoosts.get(userEmail) ?? 0) + 300);
             });
         }
 
-        // check recent listens for small boost
-        for (const [userId, prevBoost] of userBoosts.entries()) {
-            const { Items } = await client.send(new QueryCommand({
+        const fresh = freshnessScore(createdAt);
+
+        // Convert emails to userIds and process each user
+        for (const [userEmail, boost] of userBoosts.entries()) {
+            const userId = await getUserIdFromEmail(userEmail);
+            if (!userId) {
+                console.log(`Could not find userId for email: ${userEmail}`);
+                continue;
+            }
+
+            // Check recent listens for additional boost
+            const { Items: listenItems } = await client.send(new QueryCommand({
                 TableName: LISTENS_TABLE,
                 KeyConditionExpression: "userId = :u",
                 ExpressionAttributeValues: { ":u": { S: userId } },
@@ -87,47 +143,36 @@ export const handler: SQSHandler = async (event) => {
 
             let listenedBoost = 0;
 
-            if (Items) {
-                for (const listen of Items) {
+            if (listenItems) {
+                for (const listen of listenItems) {
                     const listenedContentId = listen.contentId.S!;
-                    const contentResp = await client.send(new QueryCommand({
-                        TableName: process.env.CONTENT_TABLE!,
-                        KeyConditionExpression: "contentId = :cid",
-                        ExpressionAttributeValues: { ":cid": { S: listenedContentId } },
+                    const { Item } = await client.send(new GetItemCommand({
+                        TableName: CONTENT_TABLE,
+                        Key: {
+                            contentId: { S: listenedContentId },
+                            sortKey: { S: listenedContentId },
+                        },
                     }));
 
-                    const listened = contentResp.Items?.[0];
-                    if (!listened) continue;
+                    if (!Item) continue;
 
-                    const listenedArtistIds = listened.artistIds?.SS ?? [];
-                    const listenedGenres = listened.genres?.SS ?? [];
-                    const listenedAlbumId = listened.albumId?.S;
+                    const listenedArtistIds = Item.artistIds?.SS ?? [];
+                    const listenedGenres = Item.genres?.SS ?? [];
+                    const listenedAlbumId = Item.albumId?.S;
 
-                    let times = 0;
+                    let matches = 0;
+                    if (listenedArtistIds.some((a: string) => artistIds.includes(a))) matches++;
+                    if (listenedGenres.some((g: string) => genres.includes(g))) matches++;
+                    if (albumId && listenedAlbumId === albumId) matches++;
 
-                    if (listenedArtistIds.some((a: string) => artistIds.includes(a))) {
-                        times++;
-                    }
-                    if (listenedGenres.some((g: string) => genres.includes(g))) {
-                        times++;
-                    }
-                    if (albumId && listenedAlbumId === albumId) {
-                        times++;
-                    }
-
-                    listenedBoost += 100 * times;
+                    listenedBoost += 100 * matches;
                 }
             }
 
-            userBoosts.set(userId, prevBoost + listenedBoost);
-        }
+            const totalBoost = boost + listenedBoost;
+            const newScore = totalBoost + fresh;
 
-        const fresh = freshnessScore(createdAt);
-
-        for (const [userId, boost] of userBoosts.entries()) {
-            const newScore = boost + fresh;
-
-            // 1. load current user's feed
+            // Load current user's feed
             const existing = await readCurrentFeed(userId);
             const existingMap: Record<string, number> = {};
             for (const it of existing) {
@@ -136,16 +181,16 @@ export const handler: SQSHandler = async (event) => {
                 if (cid) existingMap[cid] = sc;
             }
 
-            // 2. add/update the new content
+            // Add/update the new content
             existingMap[contentId] = Math.max(existingMap[contentId] ?? 0, newScore);
 
-            // 3. rank again
+            // Rank again
             const ranked = Object.entries(existingMap)
                 .map(([cid, sc]) => ({ contentId: cid, score: sc }))
                 .sort((a, b) => b.score - a.score)
                 .slice(0, 10);
 
-            // 4. delete old feed items
+            // Delete old feed items
             for (const it of existing) {
                 await client.send(new DeleteItemCommand({
                     TableName: FEED_TABLE,
@@ -153,9 +198,8 @@ export const handler: SQSHandler = async (event) => {
                 }));
             }
 
-            // 5. insert new ranked feed
-            for (let i = 0; i < ranked.length; i++) {
-                const r = ranked[i];
+            // Insert new ranked feed
+            for (const r of ranked) {
                 await client.send(new PutItemCommand({
                     TableName: FEED_TABLE,
                     Item: {
@@ -166,6 +210,8 @@ export const handler: SQSHandler = async (event) => {
                     }
                 }));
             }
+
+            console.log(`Updated feed for user ${userId} (${userEmail}) with content ${contentId}, score: ${newScore}`);
         }
     }
 };

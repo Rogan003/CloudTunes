@@ -143,6 +143,17 @@ export const handler: Handler<Content> = async (event: any) => {
             }));
         }
 
+        // Insert genre entries for THIS CONTENT (song)
+        for (const genre of genres) {
+            await client.send(new PutItemCommand({
+                TableName: genresTable,
+                Item: {
+                    genre: { S: genre },
+                    itemKey: { S: `CONTENT#${contentId}` },  // Add this!
+                }
+            }));
+        }
+
         if (albumId) {
             for (const genre of genres) {
                 // Insert into Genres table (one item per genre)

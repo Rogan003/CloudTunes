@@ -75,6 +75,7 @@ async function getContentsByAlbum(albumId: string): Promise<Content[]> {
             updatedAt: i.updatedAt?.S,
         });
     }
+    console.log("getContentsByAlbum - BY ALBUM", albumId, arr.length, arr);
     return arr;
 }
 
@@ -93,17 +94,16 @@ async function getContentsByArtist(artistId: string): Promise<Content[]> {
         const content = await getContentById(contentId);
         if (content) arr.push(content);
     }
+    console.log("getContentsByArtist - BY ARTIST", artistId, arr.length, arr);
     return arr;
 }
 
 async function getContentsByGenre(genre: string): Promise<Content[]> {
-    const { Items } = await client.send(
-        new QueryCommand({
-            TableName: GENRES_TABLE,
-            KeyConditionExpression: "genre = :g AND begins_with(itemKey, :prefix)",
-            ExpressionAttributeValues: { ":g": { S: genre }, ":prefix": { S: "CONTENT#" } },
-        })
-    );
+    const { Items } = await client.send(new QueryCommand({
+        TableName: GENRES_TABLE,
+        KeyConditionExpression: "genre = :g AND begins_with(itemKey, :prefix)",
+        ExpressionAttributeValues: { ":g": { S: genre }, ":prefix": { S: "CONTENT#" } }
+    }));
     const arr: Content[] = [];
     if (!Items) return arr;
     for (const i of Items) {
@@ -112,6 +112,7 @@ async function getContentsByGenre(genre: string): Promise<Content[]> {
         const content = await getContentById(contentId);
         if (content) arr.push(content);
     }
+    console.log("getContentsByGenre - BY GENRE", genre, arr.length, arr);
     return arr;
 }
 
@@ -162,6 +163,7 @@ export const handler: Handler = async (event) => {
 
         // --- CASE: rate ---
         if (type === "rate") {
+            console.log("Rate type");
             // payload: { contentId, rating }
             const { contentId, rating } = payload;
             if (!contentId || typeof rating !== "number") throw new Error("Missing contentId or rating for rate type");
@@ -170,7 +172,7 @@ export const handler: Handler = async (event) => {
             if (rating >= 3) {
                 newRating = newRating * 100;
             } else if (rating < 3) {
-                newRating = -newRating * 100;
+                newRating = -(newRating * 1000);
             }
             addBoost(contentId, newRating);
 
@@ -201,6 +203,7 @@ export const handler: Handler = async (event) => {
 
         // --- CASE: listen ---
         else if (type === "listen") {
+            console.log("Listen type");
             // payload: { contentId, ts } - ts optional (use now)
             const { contentId, ts } = payload;
             if (!contentId) throw new Error("Missing contentId for listen type");
@@ -251,8 +254,11 @@ export const handler: Handler = async (event) => {
 
         // --- CASE: subscribe ---
         else if (type === "subscribe") {
+            console.log("Subscribe type");
             // payload: { subType: "artist"|"album"|"genre", id: string }
             const { subType, id } = payload;
+            console.log("subType", subType, "id", id);
+
             if (!subType || !id) throw new Error("Missing subType or id for subscribe type");
 
             let related: Content[] = [];
@@ -275,6 +281,7 @@ export const handler: Handler = async (event) => {
 
         // --- CASE: unsubscribe ---
         else if (type === "unsubscribe") {
+            console.log("Unsubscribe type");
             const { subType, id } = payload;
             if (!subType || !id) throw new Error("Missing subType or id for unsubscribe type");
 
