@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ChangeEvent, type FC } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import {deleteContent, editContent, getAllAlbums, getAllArtists, getContent, getRatingByUser, rateContent} from "../service/content-service";
+import {deleteContent, editContent, getAllAlbums, getAllArtists, getContent, getRatingByUser, logListen, rateContent} from "../service/content-service";
 import type { GetContentResponse } from "../models/aws-calls";
 import { getFromCache, removeFromCache, saveToCache } from "../service/cache-service";
 import { AuthService } from "../../users/services/auth-service";
@@ -196,11 +196,18 @@ export const ContentView: FC = () => {
     }, [isEditing]);
 
     // ----- View Content part:
-    const togglePlay = () => {
+    const togglePlay = async () => {
         if (!audioRef.current) return;
         if (isPlaying) audioRef.current.pause();
         else audioRef.current.play();
         setIsPlaying(!isPlaying);
+        if (isPlaying && contentId) {
+            try {
+                await logListen(contentId);
+            } catch (error) {
+                console.error("Failed to log listen:", error);
+            }
+        }
     };
 
     const handleTimeUpdate = () => {
