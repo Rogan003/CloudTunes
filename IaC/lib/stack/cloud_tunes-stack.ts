@@ -72,6 +72,8 @@ export class AppStack extends cdk.Stack {
         new cdk.CfnOutput(this, 'UserPoolClientId', {value: userPoolClient.userPoolClientId});
         new cdk.CfnOutput(this, 'Region', {value: this.region});
 
+        // -------------------------------------------------------------
+
         // Contents table
         const contentTable = new dynamodb.Table(this, "Contents", {
             tableName: "Contents",
@@ -88,6 +90,8 @@ export class AppStack extends cdk.Stack {
             projectionType: dynamodb.ProjectionType.ALL,
         });
 
+        // -------------------------------------------------------------
+
         // Artist Table
         const artistTable = new dynamodb.Table(this, "Artists", {
             tableName: "Artists",
@@ -96,6 +100,8 @@ export class AppStack extends cdk.Stack {
             billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
             removalPolicy: cdk.RemovalPolicy.DESTROY,
         });
+
+        // -------------------------------------------------------------
 
         // Genres table: map genre -> albums/artists || "Genres" -> genre_name
         const genresTable = new dynamodb.Table(this, "Genres", {
@@ -106,6 +112,8 @@ export class AppStack extends cdk.Stack {
             removalPolicy: cdk.RemovalPolicy.DESTROY,
         });
 
+        // -------------------------------------------------------------
+
         // ContentArtistMap table
         const contentArtistMap = new dynamodb.Table(this, "ContentArtistMap", {
             tableName: "ContentArtistMap",
@@ -114,6 +122,8 @@ export class AppStack extends cdk.Stack {
             billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
             removalPolicy: cdk.RemovalPolicy.DESTROY,
         });
+
+        // -------------------------------------------------------------
 
         // Rating Table
         const ratingTable = new dynamodb.Table(this, "Ratings", {
@@ -131,6 +141,8 @@ export class AppStack extends cdk.Stack {
             projectionType: dynamodb.ProjectionType.ALL,
         });
 
+        // -------------------------------------------------------------
+
         // Subscription Table
         const subscriptionTable = new dynamodb.Table(this, "Subscriptions", {
             tableName: "Subscriptions",
@@ -146,6 +158,28 @@ export class AppStack extends cdk.Stack {
             sortKey: { name: "userEmail", type: dynamodb.AttributeType.STRING },
             projectionType: dynamodb.ProjectionType.ALL,
         });
+
+        // -------------------------------------------------------------
+
+        // Listens table: PK=userId, SK=timestamp (ISO)
+        const listensTable = new dynamodb.Table(this, "Listens", {
+            tableName: "Listens",
+            partitionKey: { name: "userId", type: dynamodb.AttributeType.STRING },
+            sortKey: { name: "ts", type: dynamodb.AttributeType.STRING },
+            billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+            removalPolicy: cdk.RemovalPolicy.DESTROY,
+        });
+
+        // Feed cache table: PK=userId, SK=rankKey (e.g., 0001#contentId)
+        const feedTable = new dynamodb.Table(this, "Feed", {
+            tableName: "Feed",
+            partitionKey: { name: "userId", type: dynamodb.AttributeType.STRING },
+            sortKey: { name: "rankKey", type: dynamodb.AttributeType.STRING },
+            billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+            removalPolicy: cdk.RemovalPolicy.DESTROY,
+        });
+
+        // -------------------------------------------------------------
 
         const contentBucket = new s3.Bucket(this, "ContentBucket", {
             bucketName: `cloudtunes-content-${cdk.Aws.ACCOUNT_ID}-${cdk.Aws.REGION}`,
@@ -167,6 +201,8 @@ export class AppStack extends cdk.Stack {
             ],
         });
 
+        // -------------------------------------------------------------
+
         const dlq = new sqs.Queue(this, "SubscriptionNotificationsDLQ", {
             queueName: "subscription-notifications-dlq",
             retentionPeriod: cdk.Duration.days(14),
@@ -181,6 +217,23 @@ export class AppStack extends cdk.Stack {
                 queue: dlq,
             },
         });
+
+        const feedUpdateDLQ = new sqs.Queue(this, "FeedUpdateDLQ", {
+            queueName: "feed-update-dlq",
+            retentionPeriod: cdk.Duration.days(14),
+        });
+
+        const feedUpdateQueue = new sqs.Queue(this, "FeedUpdateQueue", {
+            queueName: "feed-update-queue",
+            visibilityTimeout: cdk.Duration.seconds(300), // 5 min
+            retentionPeriod: cdk.Duration.days(1),
+            deadLetterQueue: {
+                maxReceiveCount: 3,
+                queue: feedUpdateDLQ,
+            },
+        });
+
+        // -------------------------------------------------------------
 
         // Lambda Helpers
         const commonLambdaProps = (entry: string, timeoutSec = 5) => ({
@@ -198,12 +251,17 @@ export class AppStack extends cdk.Stack {
                 CONTENT_ARTIST_TABLE: contentArtistMap.tableName,
                 RATING_TABLE: ratingTable.tableName,
                 SUBSCRIPTION_TABLE: subscriptionTable.tableName,
+                LISTENS_TABLE: listensTable.tableName,
+                FEED_TABLE: feedTable.tableName,
                 USER_POOL_ID: userPool.userPoolId,
-                SUBSCRIPTION_QUEUE_URL: subscriptionNotificationsQueue.queueUrl
+                SUBSCRIPTION_QUEUE_URL: subscriptionNotificationsQueue.queueUrl,
+                FEED_UPDATE_QUEUE_URL: feedUpdateQueue.queueUrl,
             },
         });
 
-        // Lambdas
+        // -------------------------------------------------------------
+
+        // ARTIST
         const createArtistLambda = new lambdaNode.NodejsFunction(
             this,
             "createArtist",
@@ -224,6 +282,16 @@ export class AppStack extends cdk.Stack {
             "getArtists",
             commonLambdaProps("lib/lambdas/get-artists.ts")
         );
+        artistTable.grantReadWriteData(createArtistLambda);
+        artistTable.grantReadData(getArtistsLambda)
+        artistTable.grantReadData(getArtistLambda);
+        artistTable.grantReadData(getArtistsByGenreLambda);
+        genresTable.grantReadData(getArtistsByGenreLambda);
+        genresTable.grantWriteData(createArtistLambda);
+
+        // -------------------------------------------------------------
+
+        // ALBUMS
         const getAlbumsLambda = new lambdaNode.NodejsFunction(
             this,
             "getAlbums",
@@ -231,12 +299,6 @@ export class AppStack extends cdk.Stack {
         );
         genresTable.grantReadData(getAlbumsLambda);
         contentTable.grantReadData(getAlbumsLambda);
-        artistTable.grantReadWriteData(createArtistLambda);
-        artistTable.grantReadData(getArtistsLambda)
-        artistTable.grantReadData(getArtistLambda);
-        artistTable.grantReadData(getArtistsByGenreLambda);
-        genresTable.grantReadData(getArtistsByGenreLambda);
-        genresTable.grantWriteData(createArtistLambda);
 
         const getAlbumsByGenreLambda = new lambdaNode.NodejsFunction(
             this,
@@ -246,6 +308,9 @@ export class AppStack extends cdk.Stack {
         genresTable.grantReadData(getAlbumsByGenreLambda);
         contentTable.grantReadData(getAlbumsByGenreLambda);
 
+        // -------------------------------------------------------------
+
+        // GENRES
         const getGenres = new lambdaNode.NodejsFunction(
             this,
             "getGenres",
@@ -253,6 +318,9 @@ export class AppStack extends cdk.Stack {
         );
         genresTable.grantReadData(getGenres);
 
+        // -------------------------------------------------------------
+
+        // CONTENT
         const uploadContentLambda = new lambdaNode.NodejsFunction(
             this,
             "uploadContent",
@@ -315,6 +383,9 @@ export class AppStack extends cdk.Stack {
         contentArtistMap.grantReadData(getContentByArtistLambda);
         contentTable.grantReadData(getContentByArtistLambda);
 
+        // -------------------------------------------------------------
+
+        // RATINGS
         const rateContentLambda = new lambdaNode.NodejsFunction(
             this,
             "rateContent",
@@ -331,6 +402,9 @@ export class AppStack extends cdk.Stack {
         ratingTable.grantReadData(getRatingsByContentLambda);
         ratingTable.grantReadData(getRatingByUserLambda);
 
+        // -------------------------------------------------------------
+
+        // SUBSCRIPTIONS
         const subscribeLambda = new lambdaNode.NodejsFunction(
             this,
             "subscribe",
@@ -361,8 +435,68 @@ export class AppStack extends cdk.Stack {
         artistTable.grantReadData(getSubscriptionsForUserLambda);
         contentTable.grantReadData(getSubscriptionsForUserLambda);
 
+        // -------------------------------------------------------------
+
+        // FEED
+        const logListenLambda = new lambdaNode.NodejsFunction(
+            this,
+            "logListen",
+            commonLambdaProps("lib/lambdas/log-listens.ts")
+        );
+        listensTable.grantReadWriteData(logListenLambda);
+
+        const getFeedLambda = new lambdaNode.NodejsFunction(
+            this,
+            "getFeed",
+            commonLambdaProps("lib/lambdas/get-feed.ts", 10)
+        );
+        feedTable.grantReadData(getFeedLambda);
+        contentTable.grantReadData(getFeedLambda);
+
+        const initFeedLambda = new lambdaNode.NodejsFunction(
+            this,
+            "initFeed",
+            commonLambdaProps("lib/lambdas/init-feed.ts", 10)
+        );
+        contentTable.grantReadData(initFeedLambda);
+        feedTable.grantReadWriteData(initFeedLambda);
+
+        const updateFeedLambda = new lambdaNode.NodejsFunction(
+            this,
+            "updateFeed",
+            commonLambdaProps("lib/lambdas/update-feed.ts", 30)
+        );
+        contentTable.grantReadData(updateFeedLambda);
+        genresTable.grantReadData(updateFeedLambda);
+        contentArtistMap.grantReadData(updateFeedLambda);
+        listensTable.grantReadWriteData(updateFeedLambda);
+        feedTable.grantReadWriteData(updateFeedLambda);
+
+        const uploadContentUpdateFeedLambda = new lambdaNode.NodejsFunction(
+            this,
+            "uploadContentUpdateFeed",
+            commonLambdaProps("lib/lambdas/upload-content-update-feed.ts", 60)
+        );
+        contentTable.grantReadData(uploadContentUpdateFeedLambda);
+        subscriptionTable.grantReadData(uploadContentUpdateFeedLambda);
+        listensTable.grantReadData(uploadContentUpdateFeedLambda);
+        feedTable.grantReadWriteData(uploadContentUpdateFeedLambda);
+        feedUpdateQueue.grantConsumeMessages(uploadContentUpdateFeedLambda);
+
+        // Trigger uploadContentUpdateFeedLambda from SQS
+        uploadContentUpdateFeedLambda.addEventSource(
+            new eventSources.SqsEventSource(feedUpdateQueue, {
+                batchSize: 5,
+            })
+        );
+
+        feedUpdateQueue.grantSendMessages(uploadContentLambda);
+        // -------------------------------------------------------------
+
         // API Gateway
         const api = new RestApi(this, "cloudtunes-api");
+
+        // -------------------------------------------------------------
 
         // Shared API validator
         const sharedValidator = new RequestValidator(this, 'SharedValidator', {
@@ -381,6 +515,8 @@ export class AppStack extends cdk.Stack {
             identitySource: "method.request.header.Authorization",
             resultsCacheTtl: cdk.Duration.seconds(0),
         });
+
+        // -------------------------------------------------------------
 
         const authorizeRegularUserLambda = new lambdaNode.NodejsFunction(
             this,
@@ -403,6 +539,8 @@ export class AppStack extends cdk.Stack {
             identitySource: "method.request.header.Authorization",
             resultsCacheTtl: cdk.Duration.seconds(0),
         });
+
+        // -------------------------------------------------------------
 
         // GET and POST /artists
         const artists = api.root.addResource("artists");
@@ -448,6 +586,8 @@ export class AppStack extends cdk.Stack {
             requestTemplate().path("genre").build()
         );
 
+        // -------------------------------------------------------------
+
         // Add: GET /albums
         const albums = api.root.addResource("albums");
         addCorsOptions(albums, ["GET"]);
@@ -465,6 +605,7 @@ export class AppStack extends cdk.Stack {
             requestTemplate().path("genre").build()
         );
 
+        // GET /genres
         const genres = api.root.addResource("genres");
         addCorsOptions(genres, ["GET"]);
         addMethodWithLambda(
@@ -474,6 +615,8 @@ export class AppStack extends cdk.Stack {
             sharedValidator,
             tokenAuthorizerRegularUser
         );
+
+        // -------------------------------------------------------------
 
         // POST /contents
         const contents = api.root.addResource("contents");
@@ -508,6 +651,7 @@ export class AppStack extends cdk.Stack {
             tokenAuthorizerAnyUser,
             requestTemplate().path("contentId").build()
         );
+
         // PUT /contents/{contentId}
         const editContentTmpl = requestTemplate()
             .path("contentId")
@@ -527,6 +671,7 @@ export class AppStack extends cdk.Stack {
             tokenAuthorizerAdmin,
             editContentTmpl
         );
+
         // DELETE /contents/{contentId}
         addMethodWithLambda(
             singleContent,
@@ -573,6 +718,8 @@ export class AppStack extends cdk.Stack {
             requestTemplate().path("genre").build()
         );
 
+        // -------------------------------------------------------------
+
         // POST /ratings
         const ratings = api.root.addResource("ratings");
         addCorsOptions(ratings, ["POST"]);
@@ -597,6 +744,7 @@ export class AppStack extends cdk.Stack {
             tokenAuthorizerRegularUser,
             requestTemplate().path("contentId").build()
         );
+
         // GET /ratings/content/{contentId}/user/{userId}
         const ratingByUser = ratingsByContent.addResource("user").addResource("{userId}");
         addCorsOptions(ratingByUser, ["GET"]);
@@ -608,6 +756,8 @@ export class AppStack extends cdk.Stack {
             tokenAuthorizerRegularUser,
             requestTemplate().path("contentId").path("userId").build()
         );
+
+        // -------------------------------------------------------------
 
         // POST /subscriptions
         const subs = api.root.addResource("subscriptions");
@@ -653,6 +803,63 @@ export class AppStack extends cdk.Stack {
             tokenAuthorizerRegularUser
         );
 
+        // -------------------------------------------------------------
+
+        // POST /listens
+        const listens = api.root.addResource("listens");
+        addCorsOptions(listens, ["POST"]);
+        addMethodWithLambda(
+            listens,
+            "POST",
+            logListenLambda,
+            sharedValidator,
+            tokenAuthorizerRegularUser,
+            requestTemplate()
+                .body("userId")
+                .body("contentId")
+                .build()
+        );
+
+        // POST /feed/init - generate for registered user
+        const feed = api.root.addResource("feed");
+
+        // GET /feed - Get current user's feed
+        addCorsOptions(feed, ["GET", "POST"]);
+        addMethodWithLambda(
+            feed,
+            "GET",
+            getFeedLambda,
+            sharedValidator,
+            tokenAuthorizerRegularUser
+        );
+
+        const feedInit = feed.addResource("init");
+        addCorsOptions(feedInit, ["POST"]);
+        addMethodWithLambda(
+            feedInit,
+            "POST",
+            initFeedLambda,
+            sharedValidator,
+            tokenAuthorizerRegularUser
+        );
+
+        // POST /feed/update - Manually update feed based on user action
+        const feedUpdate = feed.addResource("update");
+        addCorsOptions(feedUpdate, ["POST"]);
+        addMethodWithLambda(
+            feedUpdate,
+            "POST",
+            updateFeedLambda,
+            sharedValidator,
+            tokenAuthorizerRegularUser,
+            requestTemplate()
+                .body("type")
+                .body("payload")
+                .build()
+        );
+
+        // -------------------------------------------------------------
+
         const emailNotificationLambda = new lambdaNode.NodejsFunction(
             this,
             "emailNotificationLambda",
@@ -677,6 +884,8 @@ export class AppStack extends cdk.Stack {
             identity: ses.Identity.email("veselin.roganovic.rogan003@gmail.com"),
         });
 
+        // -------------------------------------------------------------
+
         // Outputs
         new cdk.CfnOutput(this, "ContentTableName", { value: contentTable.tableName });
         new cdk.CfnOutput(this, "ArtistTableName", { value: artistTable.tableName });
@@ -685,8 +894,12 @@ export class AppStack extends cdk.Stack {
         new cdk.CfnOutput(this, "RatingTableName", { value: ratingTable.tableName });
         new cdk.CfnOutput(this, "SubscriptionTableName", { value: subscriptionTable.tableName });
         new cdk.CfnOutput(this, "ContentBucketName", { value: contentBucket.bucketName });
+        new cdk.CfnOutput(this, "ListensTableName", { value: listensTable.tableName });
+        new cdk.CfnOutput(this, "FeedTableName", { value: feedTable.tableName });
         new cdk.CfnOutput(this, "ApiUrl", { value: api.url });
         new cdk.CfnOutput(this, "MailTasksQueueUrl", { value: subscriptionNotificationsQueue.queueUrl });
         new cdk.CfnOutput(this, "MailTasksDLQUrl", { value: dlq.queueUrl });
+        new cdk.CfnOutput(this, "FeedUpdateQueueUrl", { value: feedUpdateQueue.queueUrl });
+        new cdk.CfnOutput(this, "FeedUpdateDLQUrl", { value: feedUpdateDLQ.queueUrl });
     }
 }
