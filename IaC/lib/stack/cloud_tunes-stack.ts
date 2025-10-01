@@ -704,7 +704,7 @@ export class AppStack extends cdk.Stack {
         new cdk.CfnOutput(this, "GenresTableName", { value: genresTable.tableName });
         new cdk.CfnOutput(this, "ContentArtistMapName", { value: contentArtistMap.tableName });
         new cdk.CfnOutput(this, "RatingTableName", { value: ratingTable.tableName });
-        // new cdk.CfnOutput(this, "SubscriptionTableName", { value: subscriptionTable.tableName });
+        new cdk.CfnOutput(this, "SubscriptionTableName", { value: subscriptionTable.tableName });
         new cdk.CfnOutput(this, "ContentBucketName", { value: contentBucket.bucketName });
         new cdk.CfnOutput(this, "ApiUrl", { value: api.url });
         new cdk.CfnOutput(this, "MailTasksQueueUrl", { value: subscriptionNotificationsQueue.queueUrl });
