@@ -282,12 +282,22 @@ export class AppStack extends cdk.Stack {
             "getArtists",
             commonLambdaProps("lib/lambdas/get-artists.ts")
         );
+        const deleteArtistLambda = new lambdaNode.NodejsFunction(
+            this,
+            "deleteArtist",
+            commonLambdaProps("lib/lambdas/delete-artist.ts")
+        );
         artistTable.grantReadWriteData(createArtistLambda);
+        genresTable.grantWriteData(createArtistLambda);
+
         artistTable.grantReadData(getArtistsLambda)
         artistTable.grantReadData(getArtistLambda);
         artistTable.grantReadData(getArtistsByGenreLambda);
         genresTable.grantReadData(getArtistsByGenreLambda);
-        genresTable.grantWriteData(createArtistLambda);
+
+        artistTable.grantReadWriteData(deleteArtistLambda);
+        contentArtistMap.grantReadWriteData(deleteArtistLambda);
+        genresTable.grantReadWriteData(deleteArtistLambda);
 
         // -------------------------------------------------------------
 
@@ -307,6 +317,17 @@ export class AppStack extends cdk.Stack {
         );
         genresTable.grantReadData(getAlbumsByGenreLambda);
         contentTable.grantReadData(getAlbumsByGenreLambda);
+
+        const deleteAlbumLambda = new lambdaNode.NodejsFunction(
+            this,
+            "deleteAlbum",
+            commonLambdaProps("lib/lambdas/delete-album.ts", 30)
+        );
+        contentTable.grantReadWriteData(deleteAlbumLambda);
+        contentArtistMap.grantReadWriteData(deleteAlbumLambda);
+        genresTable.grantReadWriteData(deleteAlbumLambda);
+        contentBucket.grantReadWrite(deleteAlbumLambda);
+
 
         // -------------------------------------------------------------
 
@@ -343,6 +364,12 @@ export class AppStack extends cdk.Stack {
             "deleteContent",
             commonLambdaProps("lib/lambdas/delete-content.ts")
         );
+        const getAllContentsLambda = new lambdaNode.NodejsFunction(
+            this,
+            "getAllContents",
+            commonLambdaProps("lib/lambdas/get-all-contents.ts", 10)
+        );
+        contentTable.grantReadData(getAllContentsLambda);
 
         const getContentByArtistLambda = new lambdaNode.NodejsFunction(
             this,
@@ -562,13 +589,21 @@ export class AppStack extends cdk.Stack {
             api.addModel("CreateArtistModel", createArtistModelOptions)
         );
 
-        // GET /artists/{artistId}
+        // GET and DELETE /artists/{artistId}
         const singleArtist = artists.addResource("{artistId}");
-        addCorsOptions(singleArtist, ["GET"]);
+        addCorsOptions(singleArtist, ["GET", "DELETE"]);
         addMethodWithLambda(
             singleArtist,
             "GET",
             getArtistLambda,
+            sharedValidator,
+            tokenAuthorizerAdmin,
+            requestTemplate().path("artistId").build()
+        );
+        addMethodWithLambda(
+            singleArtist,
+            "DELETE",
+            deleteArtistLambda,
             sharedValidator,
             tokenAuthorizerAdmin,
             requestTemplate().path("artistId").build()
@@ -592,6 +627,18 @@ export class AppStack extends cdk.Stack {
         const albums = api.root.addResource("albums");
         addCorsOptions(albums, ["GET"]);
         addMethodWithLambda(albums, "GET", getAlbumsLambda, sharedValidator, tokenAuthorizerAdmin);
+
+        // GET and DELETE /albums/{albumId}
+        const singleAlbum = albums.addResource("{albumId}");
+        addCorsOptions(singleAlbum, ["DELETE"]);
+        addMethodWithLambda(
+            singleAlbum,
+            "DELETE",
+            deleteAlbumLambda,
+            sharedValidator,
+            tokenAuthorizerAdmin,
+            requestTemplate().path("albumId").build()
+        );
 
         // GET /albums/genre/{genre}
         const albumsByGenre = albums.addResource("genre").addResource("{genre}");
@@ -620,7 +667,7 @@ export class AppStack extends cdk.Stack {
 
         // POST /contents
         const contents = api.root.addResource("contents");
-        addCorsOptions(contents, ["POST"]);
+        addCorsOptions(contents, ["POST", "GET"]);
         const uploadContentTmpl = requestTemplate()
             .body("title")
             .body("imageUrl")
@@ -638,6 +685,14 @@ export class AppStack extends cdk.Stack {
             tokenAuthorizerAdmin,
             uploadContentTmpl,
             api.addModel("UploadContentModel", uploadContentModelOptions),
+        );
+        // GET /contents - Get all contents
+        addMethodWithLambda(
+            contents,
+            "GET",
+            getAllContentsLambda,
+            sharedValidator,
+            tokenAuthorizerAdmin
         );
 
         // GET /contents/{contentId}

@@ -5,6 +5,7 @@ import type {Rating} from "../models/content-models";
 import { TokenStorage } from "../../users/services/user-token-storage-service";
 import { apiFetch, API_BASE_URL } from "../../shared/api";
 import {updateFeed} from "../../music/services/feed-service.ts";
+import type {ContentCard} from "../../shared/models/content-models.ts";
 
 export async function uploadContent(content: UploadContentRequest): Promise<UploadContentResponse> {
     const response = await apiFetch(`${API_BASE_URL}/contents`, {
@@ -65,6 +66,18 @@ export async function getContent(contentId: string): Promise<GetContentResponse>
     return content;
 }
 
+export async function getAllContents(): Promise<ContentCard[]> {
+    const res = await apiFetch(`${API_BASE_URL}/contents`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+    });
+    const body = await res.json();
+    if (!res.ok) {
+        throw new Error((body?.message as string) || `Failed to load contents (${res.status})`);
+    }
+    return body as ContentCard[];
+}
+
 export async function editContent(contentId: string, update: Partial<UploadContentRequest>): Promise<GetContentResponse> {
     const response = await apiFetch(`${API_BASE_URL}/contents/${contentId}`, {
         method: "PUT",
@@ -87,6 +100,30 @@ export async function deleteContent(contentId: string): Promise<void> {
         let body: any;
         try { body = await response.json(); } catch {}
         throw new Error(body?.message || `Failed to delete content (${response.status})`);
+    }
+}
+
+export async function deleteAlbum(albumId: string): Promise<void> {
+    const response = await apiFetch(`${API_BASE_URL}/albums/${albumId}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+    });
+    if (!response.ok) {
+        let body: any;
+        try { body = await response.json(); } catch {}
+        throw new Error(body?.message || `Failed to delete album (${response.status})`);
+    }
+}
+
+export async function deleteArtist(artistId: string): Promise<void> {
+    const response = await apiFetch(`${API_BASE_URL}/artists/${artistId}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+    });
+    if (!response.ok) {
+        let body: any;
+        try { body = await response.json(); } catch {}
+        throw new Error(body?.message || `Failed to delete artist (${response.status})`);
     }
 }
 
