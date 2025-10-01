@@ -4,6 +4,7 @@ import {deleteContent, editContent, getAllAlbums, getAllArtists, getContent, get
 import type { GetContentResponse } from "../models/aws-calls";
 import { getFromCache, removeFromCache, saveToCache } from "../service/cache-service";
 import { AuthService } from "../../users/services/auth-service";
+import { BackButton } from "../../shared/components/buttons.tsx";
 
 export const ContentView: FC = () => {
     const { contentId } = useParams();

@@ -1,6 +1,7 @@
 import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import {getAllAlbums, getAllArtists, uploadContent} from "../service/content-service.ts";
 import {useNavigate} from "react-router-dom";
+import { BackButton } from "../../shared/components/buttons.tsx";
 
 export const UploadContent = () => {
     const navigate = useNavigate();
@@ -124,6 +125,9 @@ export const UploadContent = () => {
 
     return (
         <div style={styles.page}>
+            <div style={{ position: "fixed", top: 16, left: 16 }}>
+                <BackButton />
+            </div>
             <div style={styles.card}>
                 <h2 style={{ margin: 0, color: "#223d77"}}>Upload Content</h2>
                 <p style={{ marginTop: 6, color: "#667085" }}>Add a new track with album, artists, and genres.</p>
