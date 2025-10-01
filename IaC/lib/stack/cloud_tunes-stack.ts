@@ -7,7 +7,6 @@ import * as iam from "aws-cdk-lib/aws-iam";
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as s3n from "aws-cdk-lib/aws-s3-notifications";
-import { RestApi } from 'aws-cdk-lib/aws-apigateway';
 import * as sqs from "aws-cdk-lib/aws-sqs";
 import * as eventSources from "aws-cdk-lib/aws-lambda-event-sources";
 import * as ses from "aws-cdk-lib/aws-ses";
