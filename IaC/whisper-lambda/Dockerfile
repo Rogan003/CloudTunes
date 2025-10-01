@@ -17,7 +17,10 @@ COPY whisper.cpp ./whisper.cpp
 # Build the main binary
 WORKDIR /whisper/whisper.cpp
 RUN cmake -B build && cmake --build build -j
-RUN ls build/bin
+# RUN ls build/bin
+
+# RUN ls build/bin
+
 
 # -----------------------------
 # Stage 2: Lambda image
@@ -35,7 +38,20 @@ RUN npm install
 COPY . .
 
 # Copy compiled whisper binary from builder
+COPY models /var/task/models
 COPY --from=builder /whisper/whisper.cpp/build/bin/whisper-cli /var/task/whisper.cpp/whisper-cli
+COPY --from=builder /whisper/whisper.cpp/build/src/libwhisper.so* /var/task/whisper.cpp/
+COPY --from=builder /whisper/whisper.cpp/build/ggml/src/libggml*.so* /var/task/whisper.cpp/
+COPY --from=builder /usr/lib/x86_64-linux-gnu/libgomp.so.1 /var/task/whisper.cpp/
+
+ENV LD_LIBRARY_PATH=/var/task/whisper.cpp:$LD_LIBRARY_PATH
+
+# Debug: check what got copied and what libs whisper-cli expects
+# RUN ls -l /var/task/whisper.cpp && \
+#     ldd /var/task/whisper.cpp/whisper-cli || true && \
+#     echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" && \
+#     cat /etc/ld.so.conf || true \
+# RUN ls -lh /var/task/models
 
 # Lambda entry point
 CMD [ "dist/index.handler" ]

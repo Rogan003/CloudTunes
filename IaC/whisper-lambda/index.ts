@@ -9,7 +9,7 @@ const s3 = new S3Client({});
 const dynamo = new DynamoDBClient({});
 
 const CONTENT_TABLE = process.env.CONTENT_TABLE!;
-const MODEL_PATH = "/var/task/models/ggml-base-en.bin"; // mounted in Docker image
+const MODEL_PATH = "/var/task/models/ggml-base.en.bin"; // mounted in Docker image
 const WHISPER_BINARY = "/var/task/whisper.cpp/whisper-cli";   // compiled whisper.cpp binary
 
 export const handler = async (event: S3Event) => {
