@@ -137,13 +137,15 @@ export const ContentView: FC = () => {
                 const updated = await getContent(contentId);
                 setLyrics(updated.lyrics || "");
                 setTranscriptionStatus(updated.transcriptionStatus);
+                if (updated.transcriptionStatus !== "PENDING") 
+                    clearInterval(interval);
             } catch (err) {
                 console.error("Polling failed:", err);
             }
         }, 5000); // every 5 seconds
 
         return () => clearInterval(interval);
-    }, [contentId]);
+    }, [contentId, transcriptionStatus, lyrics]);
 
     const toggleDownload = async () => {
         if (!content) return;
@@ -595,6 +597,9 @@ export const ContentView: FC = () => {
     // ----- View Content part:
     return (
         <div>
+            <div style={{ position: "fixed", top: 16, left: 16 }}>
+                <BackButton />
+            </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                 <button onClick={toggleDownload}>
                     {isDownloaded ? "Remove from offline" : "Download for offline"}
@@ -738,6 +743,7 @@ export const ContentView: FC = () => {
                     )}
 
                     {content?.transcriptionStatus === "PENDING" && <p>Transcription in progress...</p>}
+                    {content?.transcriptionStatus === "FAILED" && <p>Transcription failed</p>}
                     {content?.transcriptionStatus === "COMPLETED" && (
                         <div>
                         <h3>Transcript</h3>
