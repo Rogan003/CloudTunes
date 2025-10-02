@@ -163,7 +163,7 @@ export const handler: Handler<Content> = async (event: any) => {
                     TableName: genresTable,
                     Item: {
                         genre: { S: genre },
-                        itemKey: { S: `ALBUM#${albumId}` },
+                        itemKey: { S: `ALBUM#${finalAlbumId}` },
                         name: { S: albumName },
                     }
                 }));

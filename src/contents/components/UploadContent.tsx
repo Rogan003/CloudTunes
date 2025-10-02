@@ -106,6 +106,7 @@ export const UploadContent = () => {
             };
             if (albumMode === "existing") {
                 payload.albumId = selectedAlbumId;
+                payload.albumName = albums.find((a) => a.id === selectedAlbumId)?.name || "";
             } else {
                 payload.albumName = newAlbumName.trim();
             }
