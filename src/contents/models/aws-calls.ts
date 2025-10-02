@@ -1,6 +1,8 @@
 export interface UploadContentRequest {
     title: string,
     imageUrl?: string,
+    albumId?: string,
+    albumName?: string,
     genres: string[],
     artistIds: string[],
     fileBase64: string,

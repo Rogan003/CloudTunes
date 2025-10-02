@@ -2,6 +2,7 @@ import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import { getAllArtists, uploadContent } from "../service/content-service.ts";
 import { useNavigate } from "react-router-dom";
 import { BackButton } from "../../shared/components/buttons.tsx";
+import type {UploadContentRequest} from "../models/aws-calls.ts";
 
 interface Track {
     id: string;
@@ -176,7 +177,7 @@ export const UploadSongsAlbum = () => {
                 const track = tracks[i];
                 setUploadProgress(`Uploading track ${i + 1}/${tracks.length}: ${track.title}...`);
 
-                const payload: Record<string, unknown> = {
+                const payload: UploadContentRequest = {
                     title: track.title,
                     imageUrl: track.imageUrl || undefined,
                     genres: track.genres,
@@ -188,7 +189,6 @@ export const UploadSongsAlbum = () => {
                     // First track creates the album
                     payload.albumName = albumName.trim();
                 } else {
-                    // Subsequent tracks use the albumId from first upload
                     payload.albumId = createdAlbumId;
                 }
 
