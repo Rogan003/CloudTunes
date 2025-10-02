@@ -156,7 +156,7 @@ export const handler: Handler<Content> = async (event: any) => {
             }));
         }
 
-        if (albumId) {
+        if (finalAlbumId) {
             for (const genre of genres) {
                 // Insert into Genres table (one item per genre)
                 await client.send(new PutItemCommand({
