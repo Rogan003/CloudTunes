@@ -190,6 +190,7 @@ export const UploadSongsAlbum = () => {
                     payload.albumName = albumName.trim();
                 } else {
                     payload.albumId = createdAlbumId;
+                    payload.albumName = albumName.trim();
                 }
 
                 const result = await uploadContent(payload);
