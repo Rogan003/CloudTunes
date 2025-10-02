@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState, type ChangeEvent, type FC } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import {deleteContent, editContent, getAllAlbums, getAllArtists, getContent, getRatingByUser, rateContent} from "../service/content-service";
+import {deleteContent, editContent, getAllAlbums, getAllArtists, getContent, getRatingByUser, logListen, rateContent} from "../service/content-service";
 import type { GetContentResponse } from "../models/aws-calls";
 import { getFromCache, removeFromCache, saveToCache } from "../service/cache-service";
 import { AuthService } from "../../users/services/auth-service";
+import { BackButton } from "../../shared/components/buttons.tsx";
 
 export const ContentView: FC = () => {
     const { contentId } = useParams();
@@ -16,6 +17,7 @@ export const ContentView: FC = () => {
     const [progress, setProgress] = useState(0);
     const [isDownloaded, setIsDownloaded] = useState(false);
     const isUser = AuthService.hasRole("user");
+    const isAdmin = AuthService.hasRole("admin");
 
     // ----- Transcription part:
     const [lyrics, setLyrics] = useState<string>("");
@@ -219,11 +221,18 @@ export const ContentView: FC = () => {
     }, [isEditing]);
 
     // ----- View Content part:
-    const togglePlay = () => {
+    const togglePlay = async () => {
         if (!audioRef.current) return;
         if (isPlaying) audioRef.current.pause();
         else audioRef.current.play();
         setIsPlaying(!isPlaying);
+        if (isPlaying && contentId) {
+            try {
+                await logListen(contentId);
+            } catch (error) {
+                console.error("Failed to log listen:", error);
+            }
+        }
     };
 
     const handleTimeUpdate = () => {
@@ -617,37 +626,39 @@ export const ContentView: FC = () => {
                     </p>
 
                     {/* Edit, Delete and Rate Content buttons */}
-                    <div style={{ marginTop: 12, display: "flex", justifyContent: "center", gap: 12, flexWrap: "wrap" }}>
-                        <button
-                            type="button"
-                            onClick={onEditStart}
-                            style={{
-                                background: "#10b981",
-                                color: "#fff",
-                                border: "none",
-                                borderRadius: 8,
-                                padding: "0.5rem 1rem",
-                                cursor: "pointer",
-                            }}
-                        >
-                            Edit
-                        </button>
+                    {isAdmin && (
+                        <div style={{ marginTop: 12, display: "flex", justifyContent: "center", gap: 12, flexWrap: "wrap" }}>
+                            <button
+                                type="button"
+                                onClick={onEditStart}
+                                style={{
+                                    background: "#10b981",
+                                    color: "#fff",
+                                    border: "none",
+                                    borderRadius: 8,
+                                    padding: "0.5rem 1rem",
+                                    cursor: "pointer",
+                                }}
+                            >
+                                Edit
+                            </button>
 
-                        <button
-                            type="button"
-                            onClick={onDelete}
-                            style={{
-                                background: "#ef4444",
-                                color: "#fff",
-                                border: "none",
-                                borderRadius: 8,
-                                padding: "0.5rem 1rem",
-                                cursor: "pointer",
-                            }}
-                        >
-                            Delete
-                        </button>
-                    </div>
+                            <button
+                                type="button"
+                                onClick={onDelete}
+                                style={{
+                                    background: "#ef4444",
+                                    color: "#fff",
+                                    border: "none",
+                                    borderRadius: 8,
+                                    padding: "0.5rem 1rem",
+                                    cursor: "pointer",
+                                }}
+                            >
+                                Delete
+                            </button>
+                        </div>
+                    )}
 
                     {/* Ratings */}
                     {isUser && (

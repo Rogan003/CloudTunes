@@ -23,15 +23,36 @@ export const handler: Handler<Content> = async (event: any) => {
                const contentId = i.itemKey.S!.replace("CONTENT#", "");
                const { Item } = await client.send(new GetItemCommand({
                    TableName: contentTable,
-                   Key: { contentId: { S: contentId } }
+                   Key: {
+                       contentId: { S: contentId },
+                       sortKey: { S: contentId }
+                   },
                }));
                if (Item) contents.push(Item);
            }
        }
 
-       return { statusCode: 200, body: JSON.stringify(Items || []) };
+       return {
+           statusCode: 200,
+           headers: {
+               "Access-Control-Allow-Origin": "*",
+               "Access-Control-Allow-Credentials": "false",
+               "Content-Type": "application/json",
+           },
+           body: JSON.stringify(contents)  // Return contents, not Items!
+       };
+
 
    } catch (error: any) {
-       return { statusCode: 500, body: JSON.stringify({ message: error.message }) };
+       return {
+           statusCode: 500,
+           headers: {
+               "Access-Control-Allow-Origin": "*",
+               "Access-Control-Allow-Credentials": "false",
+               "Content-Type": "application/json",
+           },
+           body: JSON.stringify({ message: error.message })
+       };
+
    }
 };

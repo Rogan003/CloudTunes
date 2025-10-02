@@ -242,6 +242,23 @@ export const handler: Handler<Content> = async (event: any) => {
         const newGenresArr = Array.isArray(genres) ? genres : oldGenres;
         const newGenresSet = new Set<string>(newGenresArr);
 
+        // insert genre entries for THIS CONTENT (song) - ALWAYS
+        for (const g of newGenresSet) {
+            if (!oldGenresSet.has(g)) {
+                try {
+                    await ddb.send(
+                        new PutItemCommand({
+                            TableName: genresTable,
+                            Item: { genre: { S: g }, itemKey: { S: `CONTENT#${contentId}` } },
+                            ConditionExpression: "attribute_not_exists(genre) AND attribute_not_exists(itemKey)",
+                        })
+                    );
+                } catch {
+                    // do nothing
+                }
+            }
+        }
+
         // insert new album-genre links
         if (finalAlbumId) {
             for (const g of newGenresSet) {

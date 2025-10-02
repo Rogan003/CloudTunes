@@ -1,3 +1,9 @@
+export interface Rating {
+    userId: string;
+    contentId: string;
+    rating: number;
+    timestamp: string;
+}
 export interface Content {
     contentId: string;
     filename: string;
@@ -12,9 +18,8 @@ export interface Content {
     genres: string[];
     artistIds: string[];
 }
-export interface Rating {
+export interface Listens {
     userId: string;
     contentId: string;
-    rating: number;
-    timestamp: string;
+    ts: string;
 }

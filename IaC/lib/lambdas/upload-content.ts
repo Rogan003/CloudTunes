@@ -14,6 +14,7 @@ const genresTable = process.env.GENRES_TABLE!;
 const contentBucket = process.env.CONTENT_BUCKET!;
 const subscriptionTable = process.env.SUBSCRIPTION_TABLE!;
 const subscriptionQueueUrl = process.env.SUBSCRIPTION_QUEUE_URL!;
+const feedUpdateQueueUrl = process.env.FEED_UPDATE_QUEUE_URL!;
 
 async function detectFile(buffer: Buffer) {
     const { fileTypeFromBuffer } = await import("file-type");
@@ -144,6 +145,17 @@ export const handler: Handler<Content> = async (event: any) => {
             }));
         }
 
+        // Insert genre entries for THIS CONTENT (song)
+        for (const genre of genres) {
+            await client.send(new PutItemCommand({
+                TableName: genresTable,
+                Item: {
+                    genre: { S: genre },
+                    itemKey: { S: `CONTENT#${contentId}` },  // Add this!
+                }
+            }));
+        }
+
         if (albumId) {
             for (const genre of genres) {
                 // Insert into Genres table (one item per genre)
@@ -227,6 +239,19 @@ export const handler: Handler<Content> = async (event: any) => {
 
             await sqs.send(command);
         }
+
+        const messageBody = JSON.stringify({
+            contentId,
+            artistIds,
+            genres,
+            albumId: finalAlbumId ?? albumId,
+            createdAt: now,
+        });
+
+        await sqs.send(new SendMessageCommand({
+            QueueUrl: feedUpdateQueueUrl,
+            MessageBody: messageBody,
+        }));
 
         return {
             statusCode: 201,

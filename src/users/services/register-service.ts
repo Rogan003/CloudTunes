@@ -5,6 +5,7 @@
 import type {User} from "../models/user-models.ts";
     import type {RegisterResponse} from "../models/aws-calls.ts";
     import {REGION, USER_POOL_CLIENT_ID} from "../../shared/aws-consts.ts";
+    import {initFeed} from "../../music/services/feed-service.ts";
 
 const client = new CognitoIdentityProviderClient({ region: REGION });
 
@@ -25,6 +26,12 @@ export async function register(user: User): Promise<RegisterResponse> {
 
     if (!response.UserSub) {
         throw new Error("Registration failed");
+    }
+
+    try {
+        await initFeed(response.UserSub);
+    } catch (error) {
+        console.error("Failed to initialize feed:", error);
     }
 
     return {

@@ -1,5 +1,6 @@
 import { useState, type CSSProperties, type FC, type FormEvent, type KeyboardEvent } from "react";
 import { createArtist } from "../services/artist-service";
+import { BackButton } from "../../shared/components/buttons.tsx";
 
 export const CreateArtistForm: FC = () => {
   const [name, setName] = useState("");
@@ -53,6 +54,9 @@ export const CreateArtistForm: FC = () => {
 
   return (
     <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "4vh 3vw" }}>
+      <div style={{ position: "fixed", top: 16, left: 16 }}>
+        <BackButton />
+      </div>
       <div style={{ width: "92%", maxWidth: 840, padding: "2.5rem", background: "#0f172a", color: "#fff", borderRadius: 12 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 24, justifyContent: "center", textAlign: "center" }}>
           <img src="/logo_transparent.png" alt="CloudTunes" style={{ width: "7.5vw", maxWidth: 72, minWidth: 40, height: "auto" }} />
