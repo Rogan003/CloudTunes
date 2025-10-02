@@ -164,6 +164,7 @@ export const handler: Handler<Content> = async (event: any) => {
                     Item: {
                         genre: { S: genre },
                         itemKey: { S: `ALBUM#${albumId}` },
+                        name: { S: albumName },
                     }
                 }));
                 // Insert into Genres table (all genres by PK=Genres)

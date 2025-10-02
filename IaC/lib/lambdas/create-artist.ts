@@ -55,6 +55,7 @@ export const handler: Handler<Artist> = async (event: any) => {
                 Item: {
                     genre: { S: genre },
                     itemKey: { S: `ARTIST#${artistId}` },
+                    name: { S: name },
                 }
             }));
 

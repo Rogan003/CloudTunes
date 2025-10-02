@@ -1,10 +1,9 @@
-import {DynamoDBClient, GetItemCommand, QueryCommand} from "@aws-sdk/client-dynamodb";
+import {DynamoDBClient, QueryCommand} from "@aws-sdk/client-dynamodb";
 import { Handler } from "aws-lambda";
 import {ArtistCard} from "../models/music-models";
 
 const client = new DynamoDBClient({});
 const genresTable = process.env.GENRES_TABLE!;
-const artistTable = process.env.ARTIST_TABLE!;
 
 export const handler: Handler<ArtistCard[]> = async (event: any) => {
     try {
@@ -20,21 +19,12 @@ export const handler: Handler<ArtistCard[]> = async (event: any) => {
         if (Items) {
             for (const i of Items) {
                 const artistId = i.itemKey.S!.replace("ARTIST#", "");
-
-                const { Item } = await client.send(
-                    new GetItemCommand({
-                        TableName: artistTable,
-                        Key: {
-                            artistId: { S: artistId },
-                            itemKey: { S: artistId }
-                        }
-                    })
-                );
+                const artistName = i.name.S!;
 
                 artists.push({
                     id: artistId,
-                    name: Item?.name?.S ?? ""
-                })
+                    name: artistName,
+                });
             }
         }
 
