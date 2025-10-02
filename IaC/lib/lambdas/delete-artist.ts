@@ -43,14 +43,6 @@ export const handler: Handler = async (event: any) => {
             })
         );
 
-        // delete also "Artists" index entry
-        await ddb.send(
-            new DeleteItemCommand({
-                TableName: artistTable,
-                Key: { artistId: { S: "Artists" }, itemKey: { S: artistId } },
-            })
-        );
-
         return json(200, { message: "Artist deleted successfully (removed from all songs)" });
 
     } catch (err) {

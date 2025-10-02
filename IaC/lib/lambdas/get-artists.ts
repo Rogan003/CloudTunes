@@ -1,4 +1,4 @@
-import {DynamoDBClient, GetItemCommand, QueryCommand} from "@aws-sdk/client-dynamodb";
+import {DynamoDBClient, ScanCommand} from "@aws-sdk/client-dynamodb";
 import type { Handler } from "aws-lambda";
 import {ArtistCard} from "../models/music-models";
 
@@ -8,37 +8,20 @@ const artistTable = process.env.ARTIST_TABLE!;
 export const handler: Handler<ArtistCard[]> = async () => {
     try {
         const { Items } = await client.send(
-            new QueryCommand({
+            new ScanCommand({
                 TableName: artistTable,
-                KeyConditionExpression: "artistId = :pk",
-                ExpressionAttributeValues: { ":pk": { S: "Artists" } },
-                ProjectionExpression: "itemKey",
             })
         );
 
-        const artists: ArtistCard[] = []
+        const artists: ArtistCard[] = [];
 
         if (Items) {
-            for (const i of Items) {
-                const artistId = i.itemKey.S!;
-
-                const { Item } = await client.send(
-                    new GetItemCommand({
-                        TableName: artistTable,
-                        Key: {
-                            artistId: { S: artistId },
-                            itemKey: { S: artistId }
-                        },
-                        ProjectionExpression: "artistId, #n, imageUrl",
-                        ExpressionAttributeNames: { "#n": "name" }
-                    })
-                );
-
-                if (Item?.artistId?.S && Item?.name?.S) {
+            for (const item of Items) {
+                if (item.artistId?.S && item.name?.S && item.artistId.S === item.itemKey?.S) {
                     artists.push({
-                        id: Item.artistId.S,
-                        name: Item.name.S,
-                        imageUrl: Item.imageUrl?.S,
+                        id: item.artistId.S,
+                        name: item.name.S,
+                        imageUrl: item.imageUrl?.S,
                     });
                 }
             }

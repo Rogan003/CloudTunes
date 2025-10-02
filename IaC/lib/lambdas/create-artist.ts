@@ -40,14 +40,6 @@ export const handler: Handler<Artist> = async (event: any) => {
         });
         await client.send(command);
 
-        await client.send(new PutItemCommand({
-            TableName: tableName,
-            Item: {
-                artistId: { S: "Artists" },
-                itemKey: { S: artistId },
-            }
-        }));
-
         // Insert into Genres table (one item per genre)
         for (const genre of genres) {
             await client.send(new PutItemCommand({

@@ -442,7 +442,7 @@ export class AppStack extends cdk.Stack {
         );
         subscriptionTable.grantReadWriteData(subscribeLambda);
 
-        const whisperLambda = new lambda.DockerImageFunction(this, "WhisperLambda", {
+       /* const whisperLambda = new lambda.DockerImageFunction(this, "WhisperLambda", {
             code: lambda.DockerImageCode.fromImageAsset(
                 path.join(__dirname, "../../whisper-lambda")
             ),
@@ -458,7 +458,7 @@ export class AppStack extends cdk.Stack {
             s3.EventType.OBJECT_CREATED,
             new s3n.LambdaDestination(whisperLambda),
             { prefix: "audio/" }
-        );
+        );*/
 
         const unsubscribeLambda = new lambdaNode.NodejsFunction(
             this,
