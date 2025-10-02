@@ -3,7 +3,6 @@ import { Construct } from 'constructs';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
 import * as lambdaNode from "aws-cdk-lib/aws-lambda-nodejs";
 import * as lambda from "aws-cdk-lib/aws-lambda";
-import * as lambdaEventSources from "aws-cdk-lib/aws-lambda-event-sources";
 import * as iam from "aws-cdk-lib/aws-iam";
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import * as s3 from 'aws-cdk-lib/aws-s3';
@@ -443,17 +442,6 @@ export class AppStack extends cdk.Stack {
         );
         subscriptionTable.grantReadWriteData(subscribeLambda);
 
-        const transcriptionDlq = new sqs.Queue(this, "TranscriptionDLQ", {
-            retentionPeriod: cdk.Duration.days(14),
-        });
-        const transcriptionQueue = new sqs.Queue(this, "TranscriptionQueue", {
-            visibilityTimeout: cdk.Duration.minutes(16),
-            retentionPeriod: cdk.Duration.days(4),
-            deadLetterQueue: {
-                maxReceiveCount: 3,
-                queue: transcriptionDlq,
-            },
-        });
         const whisperLambda = new lambda.DockerImageFunction(this, "WhisperLambda", {
             code: lambda.DockerImageCode.fromImageAsset(
                 path.join(__dirname, "../../whisper-lambda")
@@ -464,12 +452,6 @@ export class AppStack extends cdk.Stack {
                 CONTENT_TABLE: contentTable.tableName,
             },
         });
-        whisperLambda.addEventSource(
-            new lambdaEventSources.SqsEventSource(transcriptionQueue, {
-                batchSize: 1,
-                reportBatchItemFailures: true,
-            })
-        );
         contentTable.grantReadWriteData(whisperLambda);
         contentBucket.grantRead(whisperLambda);
         contentBucket.addEventNotification(
@@ -1002,7 +984,5 @@ export class AppStack extends cdk.Stack {
         new cdk.CfnOutput(this, "MailTasksDLQUrl", { value: dlq.queueUrl });
         new cdk.CfnOutput(this, "FeedUpdateQueueUrl", { value: feedUpdateQueue.queueUrl });
         new cdk.CfnOutput(this, "FeedUpdateDLQUrl", { value: feedUpdateDLQ.queueUrl });
-        new cdk.CfnOutput(this, "TranscriptionQueueUrl", { value: transcriptionQueue.queueUrl });
-        new cdk.CfnOutput(this, "TranscriptionDLQUrl", { value: transcriptionDlq.queueUrl });
     }
 }

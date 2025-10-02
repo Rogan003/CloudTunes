@@ -156,7 +156,7 @@ export const ContentView: FC = () => {
             const response = await fetch(content.fileUrl);
             const blob = await response.blob();
             await saveToCache(content.contentId, blob);
-            handleDownload(blob, content.filename);
+            handleDownload(blob, content.title);
             setIsDownloaded(true);
         }
     };

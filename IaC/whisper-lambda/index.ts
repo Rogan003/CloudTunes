@@ -109,7 +109,6 @@ export const handler = async (event: S3Event) => {
         })
       );
 
-      throw error; // let SQS retry
     }
   }
 };
