@@ -11,7 +11,7 @@ export const UploadContent = () => {
 
     // Albums
     const [albums, setAlbums] = useState<Array<{ id: string; name: string; imageUrl?: string }>>([]);
-    const [albumMode, setAlbumMode] = useState<"existing" | "new">("existing");
+    const [albumMode, setAlbumMode] = useState<"existing" | "new" | "none">("existing");
     const [selectedAlbumId, setSelectedAlbumId] = useState<string>("");
     const [newAlbumName, setNewAlbumName] = useState<string>("");
 
@@ -35,6 +35,7 @@ export const UploadContent = () => {
     const [file, setFile] = useState<File | null>(null);
     const [fileBase64, setFileBase64] = useState<string>("");
     const [fileInfo, setFileInfo] = useState<{ name?: string; type?: string; size?: number }>({});
+
     const onFileChange = (e: ChangeEvent<HTMLInputElement>) => {
         const f = e.target.files?.[0] || null;
         setFile(f || null);
@@ -107,7 +108,7 @@ export const UploadContent = () => {
             if (albumMode === "existing") {
                 payload.albumId = selectedAlbumId;
                 payload.albumName = albums.find((a) => a.id === selectedAlbumId)?.name || "";
-            } else {
+            } else if (albumMode === "new") {
                 payload.albumName = newAlbumName.trim();
             }
 
@@ -175,9 +176,19 @@ export const UploadContent = () => {
                                 />
                                 <span>Create new</span>
                             </label>
+                            <label style={styles.radio}>
+                                <input
+                                    type="radio"
+                                    name="albumMode"
+                                    value="none"
+                                    checked={albumMode === "none"}
+                                    onChange={() => setAlbumMode("none")}
+                                />
+                                <span>None (Single)</span>
+                            </label>
                         </div>
 
-                        {albumMode === "existing" ? (
+                        {albumMode === "existing" && (
                             <div style={{ ...styles.albumGrid, marginTop: 8 }}>
                                 {albums.map((a) => {
                                     const selected = selectedAlbumId === a.id;
@@ -199,7 +210,8 @@ export const UploadContent = () => {
                                     );
                                 })}
                             </div>
-                        ) : (
+                        )}
+                        {albumMode === "new" && (
                             <input
                                 style={{ ...styles.input, marginTop: 8 }}
                                 placeholder="New album name"
@@ -207,6 +219,7 @@ export const UploadContent = () => {
                                 onChange={(e) => setNewAlbumName(e.target.value)}
                             />
                         )}
+
                     </div>
 
                     {/* Genres */}

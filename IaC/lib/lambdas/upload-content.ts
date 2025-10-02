@@ -79,20 +79,9 @@ export const handler: Handler<Content> = async (event: any) => {
         let finalAlbumId = albumId as string | undefined;
         let finalAlbumName = albumName as string | undefined;
 
-        if (!albumId) {
-            if (!albumName || albumName.trim() === "") {
-                return {
-                    statusCode: 400,
-                    headers: {
-                        "Access-Control-Allow-Origin": "*",
-                        "Access-Control-Allow-Credentials": "false",
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({ message: "Either provide an existing albumId or a new albumName." }),
-                };
-            }
+        if (!albumId && albumName && albumName.trim() !== "") {
             finalAlbumId = uuidv4();
-            finalAlbumName = albumName.trim()
+            finalAlbumName = albumName.trim();
         }
 
         // Insert into Content table (all albums by PK=Albums)
@@ -156,7 +145,7 @@ export const handler: Handler<Content> = async (event: any) => {
             }));
         }
 
-        if (finalAlbumId) {
+        if (finalAlbumId && finalAlbumName) {
             for (const genre of genres) {
                 // Insert into Genres table (one item per genre)
                 await client.send(new PutItemCommand({
@@ -216,17 +205,19 @@ export const handler: Handler<Content> = async (event: any) => {
             }
         }
 
-        const { Items } = await client.send(new QueryCommand({
-            TableName: subscriptionTable,
-            IndexName: "SubscriptionsForType",
-            KeyConditionExpression: `SK = :id`,
-            ExpressionAttributeValues: { ":id": { S: `ALBUM#${albumId}` } }
-        }));
+        if (finalAlbumId && finalAlbumName) {
+            const { Items } = await client.send(new QueryCommand({
+                TableName: subscriptionTable,
+                IndexName: "SubscriptionsForType",
+                KeyConditionExpression: `SK = :id`,
+                ExpressionAttributeValues: { ":id": { S: `ALBUM#${albumId}` } }
+            }));
 
-        if (Items) {
-            for (const item of Items) {
-                const userEmail = item.userEmail.S!
-                userEmailsForNotification.add(userEmail);
+            if (Items) {
+                for (const item of Items) {
+                    const userEmail = item.userEmail.S!
+                    userEmailsForNotification.add(userEmail);
+                }
             }
         }
 
