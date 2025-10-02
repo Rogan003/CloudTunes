@@ -256,6 +256,7 @@ export class AppStack extends cdk.Stack {
                 LISTENS_TABLE: listensTable.tableName,
                 FEED_TABLE: feedTable.tableName,
                 USER_POOL_ID: userPool.userPoolId,
+                CLIENT_ID: userPoolClient.userPoolClientId,
                 SUBSCRIPTION_QUEUE_URL: subscriptionNotificationsQueue.queueUrl,
                 FEED_UPDATE_QUEUE_URL: feedUpdateQueue.queueUrl,
             },

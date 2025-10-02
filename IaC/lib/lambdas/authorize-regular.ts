@@ -1,20 +1,26 @@
 import { APIGatewayTokenAuthorizerEvent, APIGatewayAuthorizerResult } from "aws-lambda";
-import jwt, { JwtPayload } from "jsonwebtoken";
+import {CognitoJwtVerifier} from "aws-jwt-verify";
+
+const verifier = CognitoJwtVerifier.create({
+    userPoolId: process.env.USER_POOL_ID!,
+    clientId: process.env.CLIENT_ID!,
+    tokenUse: "id",
+});
 
 export async function handler(
     event: APIGatewayTokenAuthorizerEvent
 ): Promise<APIGatewayAuthorizerResult> {
     try {
         const token = event.authorizationToken.replace("Bearer ", "");
-        const decoded = jwt.decode(token) as JwtPayload;
-        const groups = decoded["cognito:groups"] || [];
+        const payload = await verifier.verify(token);
 
-        if (!groups.includes("user")) {
+        const groups = payload["cognito:groups"] || [];
+        if (!(groups.includes("user"))) {
             throw new Error("Forbidden");
         }
 
         return {
-            principalId: decoded.sub!,
+            principalId: payload.sub!,
             policyDocument: {
                 Version: "2012-10-17",
                 Statement: [
@@ -28,7 +34,7 @@ export async function handler(
             context: { role: "user" },
         };
     } catch (err) {
-        console.error(err);
+        console.error("Authorization failed:", err);
         return {
             principalId: "unauthorized",
             policyDocument: {
